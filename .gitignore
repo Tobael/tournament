@@ -1,0 +1,4 @@
+.direnv/
+postgres/
+.nix-mix/
+.nix-hex/
