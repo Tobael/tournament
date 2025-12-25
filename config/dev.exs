@@ -2,10 +2,7 @@ import Config
 
 # Configure your database
 config :tournament, Tournament.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "tournament_dev",
+  url: System.get_env("DATABASE_URL"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

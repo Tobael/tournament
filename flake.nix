@@ -17,6 +17,7 @@
           nodejs
           yarn
           postgresql
+          tailwindcss_4
         ];
 
         shellHook = ''
@@ -43,6 +44,8 @@
           if [ ! -d $PGDATA ]; then
             initdb $PGDATA --auth=trust >/dev/null
           fi
+
+          export TAILWINDCSS_PATH="${pkgs.lib.getExe pkgs.tailwindcss_4}"
         '';
       };
 
