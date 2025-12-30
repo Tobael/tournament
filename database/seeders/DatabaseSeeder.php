@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Group;
+use App\Models\Tournament;
+use App\Models\TournamentUser;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -18,8 +20,16 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@tournaments.com',
         ]);
 
-        Group::factory()->create([
+        $users = User::factory()->count(5)->create();
+
+        $group = Group::factory()->create([
             'name' => 'Kellerkinder',
         ]);
+
+        $tournament = Tournament::factory()->for($group)->create();
+
+        foreach ($users as $user) {
+            TournamentUser::factory()->for($user)->for($tournament)->create();
+        }
     }
 }
