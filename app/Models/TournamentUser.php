@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TournamentUser extends Model
 {
+    protected $fillable = [
+        'deck_name',
+        'tournament_id',
+        'user_id',
+        'deckname',
+    ];
+
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);

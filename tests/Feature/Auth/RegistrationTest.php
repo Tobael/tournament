@@ -15,7 +15,7 @@ test('new users can register', function () {
     ]);
 
     $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('tournaments', absolute: false));
 
     $this->assertAuthenticated();
 });

@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tournament extends Model
 {
+    protected $fillable = [
+        'name',
+        'status',
+        'group_id',
+    ];
+
     protected function casts(): array
     {
         return [
