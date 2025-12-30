@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\RoundMatchResult;
+use App\Enums\RoundMatchResult;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

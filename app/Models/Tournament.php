@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use App\Enums\Status;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tournament extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'status' => Status::class,
+        ];
+    }
+
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
