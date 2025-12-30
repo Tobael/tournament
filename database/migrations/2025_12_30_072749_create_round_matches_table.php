@@ -17,7 +17,7 @@ return new class extends Migration
             $table->enum('result', RoundMatchResult::cases());
             $table->foreignId('round_id')->constrained();
             $table->foreignId('player_a_id')->constrained(table: 'tournament_users', column: 'id');
-            $table->foreignId('player_b_id')->constrained(table: 'tournament_users', column: 'id');
+            $table->foreignId('player_b_id')->nullable()->constrained(table: 'tournament_users', column: 'id');
             $table->timestamps();
         });
     }
