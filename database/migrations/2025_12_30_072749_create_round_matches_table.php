@@ -1,0 +1,32 @@
+<?php
+
+use App\RoundMatchResult;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('round_matches', function (Blueprint $table) {
+            $table->id();
+            $table->enum('result', RoundMatchResult::cases());
+            $table->foreignId('round_id')->constrained();
+            $table->foreignId('player_a_id')->constrained(table: 'tournament_users', column: 'id');
+            $table->foreignId('player_b_id')->constrained(table: 'tournament_users', column: 'id');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('round_matches');
+    }
+};
