@@ -87,7 +87,4 @@ COPY ./nginx.conf /etc/nginx/http.d/default.conf
 
 WORKDIR /var/www/html
 
-# add all folders where files are being stored that require persistence. if needed, otherwise remove this line.
-VOLUME ["/var/www/html/storage/app"]
-
 CMD ["sh", "-c", "php-fpm -F & nginx -g 'daemon off;'"]
