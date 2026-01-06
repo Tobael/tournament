@@ -34,6 +34,7 @@ services:
       - "traefik.http.routers.mtg.entrypoints=websecure"
       - "traefik.http.routers.mtg.tls=true"
       - "traefik.docker.network=external_network"
+      - "traefik.http.services.mtg.loadbalancer.server.port=80"
 networks:
   external_network:
     external: true
