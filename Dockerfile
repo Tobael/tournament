@@ -3,6 +3,10 @@
 # stage 1: build stage
 FROM php:8.4-fpm-alpine as build
 
+ARG TEST
+ARG FLUX_USERNAME
+ARG FLUX_LICENSE_KEY
+
 # installing system dependencies and php extensions
 RUN apk add --no-cache \
     zip \
@@ -42,6 +46,8 @@ RUN composer install --no-dev --prefer-dist \
 
 RUN chown -R www-data:www-data /var/www/html/vendor \
     && chmod -R 775 /var/www/html/vendor
+
+RUN composer config --global --unset http-basic.composer.fluxui.dev
 
 # stage 2: production stage
 FROM php:8.4-fpm-alpine
