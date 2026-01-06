@@ -20,7 +20,7 @@ services:
     # allocate as many volumes as necessary, if needed.
     volumes:
       - /docker-compose-services/mtg/storage/app:/var/www/html/storage/app
-      - /docker-compose-services/mtg/database/database.sqlite:/var/www/html/database/database.sqlite
+      - /docker-compose-services/mtg/database:/var/www/html/database
     networks:
       - external_network
     labels:
