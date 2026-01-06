@@ -6,6 +6,7 @@ use App\Models\Group;
 use App\Models\Tournament;
 use App\Models\TournamentUser;
 use App\Models\User;
+use App\SwissTournamentHandler;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -31,5 +32,7 @@ class DatabaseSeeder extends Seeder
         foreach ($users as $user) {
             TournamentUser::factory()->for($user)->for($tournament)->create();
         }
+
+        SwissTournamentHandler::create($tournament)->generateNextRound();
     }
 }
