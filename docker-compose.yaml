@@ -8,7 +8,7 @@ services:
       dockerfile: ./Dockerfile
     # allocate as many volumes as necessary, if needed.
     volumes:
-      - docker-compose-services/mtg/storage/app:/var/www/html/storage/app
+      - /docker-compose-services/mtg/storage/app:/var/www/html/storage/app
     environment:
       APP_NAME: MTG Turnier
       APP_ENV: production
