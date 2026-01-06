@@ -9,13 +9,6 @@ services:
     # allocate as many volumes as necessary, if needed.
     volumes:
       - /docker-compose-services/mtg/storage/app:/var/www/html/storage/app
-    environment:
-      APP_NAME: MTG Turnier
-      APP_ENV: production
-      APP_DEBUG: false
-      APP_KEY: ${APP_KEY}
-      APP_URL: mtg.betz.coffee
-      DB_CONNECTION: sqlite
     networks:
       - external_network
     labels:
