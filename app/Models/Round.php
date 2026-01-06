@@ -24,6 +24,6 @@ class Round extends Model
     }
 
     public function isCompleted(): bool {
-        return $this->matches->reduce(fn(bool $carry, RoundMatch $match) => $carry && $match->result, false);
+        return $this->matches->reduce(fn(bool $carry, RoundMatch $match) => $carry && $match->result, true);
     }
 }
