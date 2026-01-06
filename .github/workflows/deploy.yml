@@ -35,5 +35,5 @@ jobs:
           port: 22
           script: |
             cd mtg
-            echo {{ secrets.ENV_FILE }} > .env
+            echo ${{ secrets.ENV_FILE }} > .env
             docker compose --env-file ./.env up -d --build --remove-orphans
