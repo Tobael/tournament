@@ -10,6 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RoundMatch extends Model
 {
+    protected $fillable = [
+        'result',
+        'round_id',
+        'player_a_id',
+        'player_b_id',
+    ];
+
     protected function casts(): array
     {
         return [

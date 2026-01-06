@@ -26,4 +26,16 @@ class TournamentUser extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function points(): int
+    {
+        return $this->tournament
+            ->matches()
+            ->hasUser($this)
+            ->get()
+            ->reduce(function (int $carry, RoundMatch $match) {
+                $index = $match->player_a_id == $this->id ? 0 : 1;
+                return $carry + $match->result->toPoints()[$index];
+            }, 0);
+    }
 }

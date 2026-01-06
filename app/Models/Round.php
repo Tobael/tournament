@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Round extends Model
 {
+    protected $fillable = [
+        'round',
+        'tournament_id',
+    ];
+
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);

@@ -13,7 +13,6 @@ class TournamentUserFactory extends Factory
     {
         return [
             'deckname' => fake()->sentence(),
-            'points' => 0,
         ];
     }
 }
