@@ -17,9 +17,11 @@ services:
       APP_KEY: ${APP_KEY}
       APP_VERSION: ${APP_VERSION}
       APP_URL: ${APP_URL}
+    user: "33:82"
     # allocate as many volumes as necessary, if needed.
     volumes:
       - /docker-compose-services/mtg/storage/app:/var/www/html/storage/app
+      - /docker-compose-services/mtg/database/database.sqlite:/var/www/html/database/database.sqlite
     networks:
       - external_network
     labels:
