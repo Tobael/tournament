@@ -18,7 +18,17 @@ services:
       DB_CONNECTION: sqlite
     networks:
       - external_network
+    labels:
+      - "traefik.enable=true"
 
+      ########################
+      # External normal access
+      ########################
+      - "traefik.http.routers.mtg.rule=Host(`mtg.betz.coffee`)"
+      - "traefik.http.routers.mtg.entrypoints=websecure"
+      - "traefik.http.routers.mtg.tls=true"
+      - "traefik.http.routers.mtg.service=immich"
+      - "traefik.docker.network=external_network"
 networks:
   external_network:
     external: true

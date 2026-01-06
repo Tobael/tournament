@@ -34,5 +34,5 @@ jobs:
           key: ${{ secrets.DEPLOY_SECRET_KEY }}
           port: 22
           script: |
-            cd wedding/dockerfiles/mtg
+            cd mtg
             docker compose up -d --build --remove-orphans -e ${{ secrets.APP_KEY }}
