@@ -42,6 +42,9 @@ class Tournament extends Component
 
     public function startNextRound(): void
     {
+        if ($this->tournament->status === Status::OPEN) {
+            $this->tournament->update(['status' => Status::IN_PROGRESS]);
+        }
         SwissTournamentHandler::create($this->tournament)->generateNextRound();
     }
 }

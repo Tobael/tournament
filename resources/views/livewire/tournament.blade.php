@@ -1,6 +1,7 @@
 @php use App\Enums\Status; @endphp
 <div>
     @if($tournament->status === Status::OPEN)
+        <flux:button wire:click="startNextRound">Turnier starten</flux:button>
         <flux:table>
             <flux:table.columns>
                 <flux:table.column>Name</flux:table.column>

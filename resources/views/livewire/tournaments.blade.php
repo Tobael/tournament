@@ -24,14 +24,14 @@
         <flux:table.rows>
             @foreach ($this->tournaments as $tournament)
                 <flux:table.row :key="$tournament->id">
-                    <flux:table.cell class="flex items-center gap-3">
+                    <flux:table.cell class="flex items-center gap-3" wire:navigate :href="route('tournament', $tournament)">
                         {{ $tournament->name }}
                     </flux:table.cell>
 
-                    <flux:table.cell
+                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)"
                         class="whitespace-nowrap">{{ $tournament->created_at->format('d.m.Y H:i:s') }}</flux:table.cell>
 
-                    <flux:table.cell>
+                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)">
                         <flux:icon name="{{$tournament->status->toIcon()}}"></flux:icon>
                     </flux:table.cell>
 
@@ -48,10 +48,10 @@
 
                     <flux:table.cell>
                         <flux:button icon="pencil" variant="ghost" size="sm" class="cursor-pointer"
-                                     wire:click="openEditModal({{$tournament->id}})"
+                                     wire:click.stop="openEditModal({{$tournament->id}})"
                                      inset="top bottom"></flux:button>
                         <flux:button icon="trash" variant="ghost" size="sm" class="cursor-pointer"
-                                     wire:click="openDeleteModal({{$tournament->id}})"
+                                     wire:click.stop="openDeleteModal({{$tournament->id}})"
                                      inset="top bottom"></flux:button>
                     </flux:table.cell>
                 </flux:table.row>

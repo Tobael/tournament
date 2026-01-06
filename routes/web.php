@@ -9,15 +9,11 @@ use App\Livewire\Tournament;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-Route::redirect('/', '/login');
-
-Route::get('/', function () {
-    return view('home');
-})->name('home');
+Route::redirect('/', '/tournaments')->name('home');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('tournament/{tournament}', Tournament::class)->name('tournament');
-    Route::get('tournaments', Tournaments::class)->name('tournaments');
+    Route::get('/tournaments', Tournaments::class)->name('tournaments');
 
     Route::redirect('settings', 'settings/profile');
     Route::get('settings/profile', Profile::class)->name('profile.edit');
