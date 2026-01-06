@@ -6,7 +6,6 @@ use App\Enums\Status;
 use App\Models\Group;
 use App\Models\Tournament;
 use App\Models\TournamentUser;
-use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;

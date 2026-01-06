@@ -37,9 +37,18 @@ class Tournament extends Model
         return $this->hasMany(TournamentUser::class);
     }
 
+    public function participants(): HasManyThrough
+    {
+        return $this->hasManyThrough(User::class, TournamentUser::class, 'tournament_id', 'id', 'id', 'user_id');
+    }
+
     public function rounds(): HasMany
     {
         return $this->hasMany(Round::class);
+    }
+
+    public function currentRound(): Round {
+        return $this->rounds()->orderBy('round', 'desc')->first();
     }
 
     public function matches(): HasManyThrough

@@ -5,6 +5,7 @@ use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
 use App\Livewire\Tournaments;
+use App\Livewire\Tournament;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -15,6 +16,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('tournament/{tournament}', Tournament::class)->name('tournament');
     Route::get('tournaments', Tournaments::class)->name('tournaments');
 
     Route::redirect('settings', 'settings/profile');
