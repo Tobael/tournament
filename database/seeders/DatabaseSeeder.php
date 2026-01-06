@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@tournaments.com',
         ]);
 
-        $users = User::factory()->count(5)->create();
+        User::factory()->count(4)->create();
 
         $group = Group::factory()->create([
             'name' => 'Kellerkinder',
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
 
         $tournament = Tournament::factory()->for($group)->create();
 
-        foreach ($users as $user) {
+        foreach (User::all() as $user) {
             TournamentUser::factory()->for($user)->for($tournament)->create();
         }
 

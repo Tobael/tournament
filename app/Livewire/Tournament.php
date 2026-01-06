@@ -2,9 +2,12 @@
 
 namespace App\Livewire;
 
+use App\Enums\RoundMatchResult;
 use App\Enums\Status;
+use App\Models\RoundMatch;
 use App\Models\TournamentUser;
 use App\SwissTournamentHandler;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Tournament extends Component
@@ -25,7 +28,11 @@ class Tournament extends Component
     {
         return match ($this->tournament->status) {
             Status::OPEN, Status::CLOSED => view('livewire.tournament'),
-            Status::IN_PROGRESS => view('livewire.tournament', ['matches' => $this->tournament->matches, 'rounds' => $this->tournament->rounds]),
+            Status::IN_PROGRESS => view('livewire.tournament', [
+                'matches' => $this->tournament->matches,
+                'rounds' => $this->tournament->rounds,
+                'currentMatch' => $this->tournament->getCurrentMatchFor(auth()->user()),
+            ]),
         };
     }
 
@@ -46,5 +53,13 @@ class Tournament extends Component
             $this->tournament->update(['status' => Status::IN_PROGRESS]);
         }
         SwissTournamentHandler::create($this->tournament)->generateNextRound();
+    }
+
+    public function updateCurrentMatchForUser(RoundMatchResult $result): void
+    {
+        $match = $this->tournament->getCurrentMatchFor(auth()->user());
+        $match->update([
+            'result' => $result,
+        ]);
     }
 }
