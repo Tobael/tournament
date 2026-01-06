@@ -55,4 +55,15 @@ class Tournament extends Model
     {
         return $this->hasManyThrough(RoundMatch::class, Round::class);
     }
+
+    public function getCurrentMatchFor(User $user): RoundMatch
+    {
+        $tournamentUser = $user->getTournamentUser($this);
+
+        return $this->rounds()
+            ->orderBy('round', 'desc')
+            ->first()
+            ->matches
+            ->first(fn (RoundMatch $match) => $match->player_a_id == $tournamentUser->id || $match->player_b_id == $tournamentUser->id);
+    }
 }

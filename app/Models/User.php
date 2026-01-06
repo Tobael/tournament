@@ -62,4 +62,9 @@ class User extends Authenticatable
             ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
+
+    public function getTournamentUser(Tournament $tournament): TournamentUser
+    {
+        return $tournament->users()->where('user_id', $this->id)->first();
+    }
 }
