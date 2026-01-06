@@ -37,3 +37,5 @@ jobs:
             cd mtg
             echo ${{ secrets.ENV_FILE }} > .env
             docker compose --env-file ./.env up -d --build --remove-orphans
+            docker exec -t magic_tournament composer config http-basic.composer.fluxui.dev "${{secrets.FLUX_USERNAME}}" "${{secrets.FLUX_LICENSE_KEY}}"
+            docker exec -t magic_tournament php artisan migrate
