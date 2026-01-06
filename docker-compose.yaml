@@ -6,6 +6,10 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    environment:
+      FLUX_USERNAME: ${FLUX_USERNAME}
+      FLUX_LICENSE_KEY: ${FLUX_LICENSE_KEY}
+      TEST: ${TEST}
     # allocate as many volumes as necessary, if needed.
     volumes:
       - /docker-compose-services/mtg/storage/app:/var/www/html/storage/app
