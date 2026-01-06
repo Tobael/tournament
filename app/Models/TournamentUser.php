@@ -12,7 +12,6 @@ class TournamentUser extends Model
     use HasFactory;
 
     protected $fillable = [
-        'deck_name',
         'tournament_id',
         'user_id',
         'deckname',

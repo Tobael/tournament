@@ -6,6 +6,7 @@ use App\Enums\Status;
 use App\Models\Group;
 use App\Models\Tournament;
 use App\Models\TournamentUser;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -19,6 +20,10 @@ class Tournaments extends Component
     public ?string $deckname = null;
     public string $sortDirection = 'desc';
     public string $sortBy = 'created_at';
+
+    public ?Tournament $selectedTournament = null;
+    public ?int $selectedTournamentId = null;
+
 
     public function sort($column): void
     {
@@ -54,43 +59,39 @@ class Tournaments extends Component
         $this->reset(['name', 'groupId']);
     }
 
-    public function openDeleteModal(Tournament $tournament): void
+    public function deleteTournament(): void
     {
-        $this->modal("delete-tournament-$tournament->id")->show();
+        $this->selectedTournament->delete();
+        $this->modal('delete-tournament')->close();
     }
 
-    public function openParticipateModal(Tournament $tournament): void
+    public function editTournament(): void
     {
-        $this->modal("participate-tournament-$tournament->id")->show();
-    }
-
-    public function deleteTournament(Tournament $tournament): void
-    {
-        $tournament->delete();
-        $this->modal("delete-tournament-$tournament->id")->close();
-    }
-
-    public function openEditModal(Tournament $tournament): void
-    {
-        $this->name = $tournament->name;
-        $this->groupId = $tournament->group->id;
-        $this->modal("edit-tournament-$tournament->id")->show();
-    }
-
-    public function editTournament(Tournament $tournament): void
-    {
-        $tournament->update([
+        $this->selectedTournament->update([
             'name' => $this->name,
-            'group_id' => $this->groupId
+            'group_id' => $this->groupId,
         ]);
-        $this->modal("edit-tournament-$tournament->id")->close();
-        $this->reset(['name', 'groupId']);
+
+        $this->modal('edit-tournament')->close();
     }
 
-    public function participateTournament(Tournament $tournament): void
+    public function participateTournament(): void
     {
-        TournamentUser::create(['user_id' => auth()->user()->id, 'tournament_id' => $tournament->id, 'deckname' => $this->deckname]);
-        $this->modal("participate-tournament-$tournament->id")->close();
+        if ($this->selectedTournament->status !== Status::OPEN) {
+            return;
+        }
+
+        TournamentUser::firstOrCreate(
+            [
+                'user_id' => auth()->id(),
+                'tournament_id' => $this->selectedTournament->id,
+            ],
+            [
+                'deckname' => $this->deckname,
+            ]
+        );
+
+        $this->modal('participate-tournament')->close();
     }
 
     #[Computed]
@@ -98,4 +99,33 @@ class Tournaments extends Component
     {
         return Tournament::query()->tap(fn($query) => $this->sortBy ? $query->orderBy($this->sortBy, $this->sortDirection) : $query)->paginate(10);
     }
+
+    #[Computed]
+    public function userParticipates(Tournament $tournament): bool
+    {
+        return $tournament->users->pluck("user_íd")->contains(auth()->id());
+    }
+
+    public function openParticipateModal(Tournament $tournament): void
+    {
+        $this->selectedTournament = $tournament;
+        $this->reset('deckname');
+        $this->modal('participate-tournament')->show();
+    }
+
+    public function openEditModal(Tournament $tournament): void
+    {
+        $this->selectedTournament = $tournament;
+        $this->name = $this->selectedTournament->name;
+        $this->groupId = $this->selectedTournament->group_id;
+
+        $this->modal('edit-tournament')->show();
+    }
+
+    public function openDeleteModal(Tournament $tournament): void
+    {
+        $this->selectedTournament = $tournament;
+        $this->modal('delete-tournament')->show();
+    }
+
 }

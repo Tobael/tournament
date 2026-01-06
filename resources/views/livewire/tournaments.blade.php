@@ -28,17 +28,22 @@
                         {{ $tournament->name }}
                     </flux:table.cell>
 
-                    <flux:table.cell class="whitespace-nowrap">{{ $tournament->created_at->format('d.m.Y H:m:s') }}</flux:table.cell>
+                    <flux:table.cell
+                        class="whitespace-nowrap">{{ $tournament->created_at->format('d.m.Y H:i:s') }}</flux:table.cell>
 
                     <flux:table.cell>
                         <flux:icon name="{{$tournament->status->toIcon()}}"></flux:icon>
                     </flux:table.cell>
 
                     <flux:table.cell>
-                        <flux:button icon="arrow-right-end-on-rectangle" variant="ghost" size="sm"
-                                     class="cursor-pointer"
-                                     wire:click="openParticipateModal({{$tournament->id}})"
-                                     inset="top bottom"></flux:button>
+                        @if(
+                            $tournament->status === App\Enums\Status::OPEN && !$this->userParticipates($tournament)
+                        )
+                            <flux:button icon="arrow-right-end-on-rectangle" variant="ghost" size="sm"
+                                         class="cursor-pointer"
+                                         wire:click="openParticipateModal({{$tournament->id}})"
+                                         inset="top bottom"></flux:button>
+                        @endif
                     </flux:table.cell>
 
                     <flux:table.cell>
@@ -54,147 +59,121 @@
         </flux:table.rows>
     </flux:table>
 
-    <flux:modal name="create-tournament">
-        <div class="flex items-center justify-between mb-6">
-            <flux:heading size="lg">{{ __('Turnier hinzufügen') }}</flux:heading>
-        </div>
+    <!-- Modals -->
+    <flux:modal name="participate-tournament">
+        @if($selectedTournament)
+            <flux:heading size="lg">
+                An Turnier teilnehmen
+            </flux:heading>
 
-        <form wire:submit="createTournament" class="space-y-6">
+            <p>
+                Möchtest du dem Turnier
+                <strong>"{{ $selectedTournament->name }}"</strong>
+                beitreten?
+            </p>
+
+            <form wire:submit="participateTournament" class="space-y-6">
+                <flux:input wire:model="deckname" label="Deck Name"/>
+
+                <div class="flex justify-end gap-3">
+                    <flux:modal.close>
+                        <flux:button variant="ghost">Abbrechen</flux:button>
+                    </flux:modal.close>
+
+                    <flux:button type="submit" variant="primary" color="green">Ja</flux:button>
+                </div>
+            </form>
+        @endif
+    </flux:modal>
+
+    <flux:modal name="edit-tournament">
+        @if($selectedTournament)
+            <flux:heading size="lg">
+                Turnier bearbeiten
+            </flux:heading>
+
+            <form wire:submit="editTournament" class="space-y-6">
+                <flux:input wire:model="name" label="Name"/>
+
+                <flux:select wire:model="groupId" variant="listbox">
+                    @foreach($groups as $group)
+                        <flux:select.option value="{{ $group->id }}">
+                            {{ $group->name }}
+                        </flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                <div class="flex justify-end gap-3">
+                    <flux:modal.close>
+                        <flux:button variant="ghost">Abbrechen</flux:button>
+                    </flux:modal.close>
+
+                    <flux:button type="submit" variant="primary">Speichern</flux:button>
+                </div>
+            </form>
+        @endif
+    </flux:modal>
+
+    <flux:modal name="delete-tournament">
+        @if($selectedTournament)
+            <flux:heading size="lg">Turnier löschen</flux:heading>
+
+            <div class="mb-5">
+                Möchtest du das Turnier
+                <strong>"{{ $selectedTournament->name }}"</strong>
+                wirklich löschen?
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Abbrechen</flux:button>
+                </flux:modal.close>
+
+                <flux:button variant="danger" wire:click="deleteTournament">
+                    Ja
+                </flux:button>
+            </div>
+        @endif
+    </flux:modal>
+
+    <flux:modal name="create-tournament">
+        <flux:heading size="lg">
+            {{ __('Turnier hinzufügen') }}
+        </flux:heading>
+
+        <form class="space-y-6">
             <flux:input
                 wire:model="name"
-                :label="__('Name')"
+                label="Name"
             />
 
-            <flux:select wire:model="groupId" variant="listbox" placeholder="Gruppe auswählen...">
+            <flux:select
+                wire:model="groupId"
+                variant="listbox"
+                placeholder="Gruppe auswählen..."
+            >
                 @foreach ($groups as $group)
-                    <flux:select.option
-                        value="{{$group->id}}">{{ $group->name }}</flux:select.option>
+                    <flux:select.option value="{{ $group->id }}">
+                        {{ $group->name }}
+                    </flux:select.option>
                 @endforeach
             </flux:select>
 
-
             <div class="flex justify-end gap-3 pt-4">
                 <flux:modal.close>
-                    <flux:button
-                        type="button"
-                        variant="ghost"
-                    >
-                        {{ __('Abbrechen') }}
+                    <flux:button variant="ghost">
+                        Abbrechen
                     </flux:button>
                 </flux:modal.close>
 
                 <flux:button
-                    type="submit"
                     variant="primary"
+                    wire:click="createTournament"
                 >
-                    {{ __('Ok') }}
+                    Ok
                 </flux:button>
             </div>
         </form>
     </flux:modal>
 
-    @foreach($this->tournaments as $tournament)
-        <flux:modal name="participate-tournament-{{$tournament->id}}">
-            <div class="flex items-center justify-between mb-6">
-                <flux:heading size="lg">{{ __('An Turnier teilnehmen') }}</flux:heading>
-            </div>
-
-            <div>
-                Möchstest du dem Turnier "{{$tournament->name}}" beitreten?
-            </div>
-
-            <form wire:submit="participateTournament({{$tournament->id}})" class="space-y-6">
-                <flux:input
-                    wire:model="deckname"
-                    :label="__('Deck Name')"
-                />
-
-                <div class="flex justify-end gap-3 pt-4">
-                    <flux:modal.close>
-                        <flux:button
-                            type="button"
-                            variant="ghost"
-                        >
-                            {{ __('Abbrechen') }}
-                        </flux:button>
-                    </flux:modal.close>
-
-                    <flux:button
-                        type="submit"
-                        variant="primary"
-                        color="green"
-                    >
-                        {{ __('Ja') }}
-                    </flux:button>
-                </div>
-            </form>
-        </flux:modal>
-        <flux:modal name="delete-tournament-{{$tournament->id}}">
-            <div class="flex items-center justify-between mb-6">
-                <flux:heading size="lg">{{ __('Turnier löschen') }}</flux:heading>
-            </div>
-
-            <div>
-                Möchstest du das Turnier "{{$tournament->name}}" wirklich löschen?
-            </div>
-
-            <div class="flex justify-end gap-3 pt-4">
-                <flux:modal.close>
-                    <flux:button
-                        type="button"
-                        variant="ghost"
-                    >
-                        {{ __('Abbrechen') }}
-                    </flux:button>
-                </flux:modal.close>
-
-                <flux:button
-                    type="submit"
-                    variant="danger"
-                    wire:click="deleteTournament({{$tournament->id}})"
-                >
-                    {{ __('Ja') }}
-                </flux:button>
-            </div>
-        </flux:modal>
-        <flux:modal name="edit-tournament-{{$tournament->id}}">
-            <div class="flex items-center justify-between mb-6">
-                <flux:heading size="lg">{{ __('Turnier "'.$tournament->name.'" bearbeiten') }}</flux:heading>
-            </div>
-
-            <form wire:submit="editTournament({{$tournament->id}})" class="space-y-6">
-                <flux:input
-                    wire:model="name"
-                    :label="__('Name')"
-                />
-
-                <flux:select wire:model="groupId" variant="listbox" placeholder="Gruppe auswählen...">
-                    @foreach ($groups as $group)
-                        <flux:select.option
-                            :selected="$groupId === $group->id"
-                            value="{{$group->id}}">{{ $group->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-
-
-                <div class="flex justify-end gap-3 pt-4">
-                    <flux:modal.close>
-                        <flux:button
-                            type="button"
-                            variant="ghost"
-                        >
-                            {{ __('Abbrechen') }}
-                        </flux:button>
-                    </flux:modal.close>
-
-                    <flux:button
-                        type="submit"
-                        variant="primary"
-                    >
-                        {{ __('Ok') }}
-                    </flux:button>
-                </div>
-            </form>
-        </flux:modal>
-    @endforeach
 </div>
