@@ -36,7 +36,7 @@ jobs:
           script: |
             cd mtg
             echo ${{ secrets.ENV_FILE }} > .env
-            echo ${{secrets.FLUX_USERNAME}} >> .env
-            echo FLUX_LICENSE_KEY=${{secrets.FLUX_LICENSE_KEY}} >> .env
+            echo "FLUX_USERNAME=${{secrets.FLUX_USERNAME}}" >> .env
+            echo "FLUX_LICENSE_KEY=${{secrets.FLUX_LICENSE_KEY}}" >> .env
             docker compose --env-file ./.env up -d --build --remove-orphans
             docker exec -t magic_tournament php artisan migrate
