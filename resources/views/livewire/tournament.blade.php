@@ -20,6 +20,31 @@
             </flux:table.rows>
         </flux:table>
     @elseif($tournament->status === Status::IN_PROGRESS)
+        <flux:modal name="finish-tournament">
+            <flux:heading size="lg">Turnier beenden</flux:heading>
+
+            <div class="mb-5">
+                Möchtest du das Turnier
+                <strong>"{{ $tournament->name }}"</strong>
+                wirklich beenden?
+            </div>
+            @if(!$tournament->currentRound()->isCompleted())
+                <div class="mb-5">
+                    <strong>Die aktuelle Turnierrunde ist noch nicht ausgespielt!</strong>
+                </div>
+            @endif
+
+            <div class="flex justify-end gap-3">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Abbrechen</flux:button>
+                </flux:modal.close>
+
+                <flux:button variant="danger" wire:click="finishTournament">
+                    Ja
+                </flux:button>
+            </div>
+        </flux:modal>
+
         <flux:button.group>
             <flux:button :variant="$tournament->currentRound()->isCompleted() ? 'primary' : 'danger'"
                         wire:click="openFinishModal">Turnier beenden
@@ -66,30 +91,4 @@
     @elseif($tournament->status === Status::CLOSED)
         Tournament {{ $tournament->id }} is closed
     @endif
-
-
-    <flux:modal name="finish-tournament">
-        <flux:heading size="lg">Turnier beenden</flux:heading>
-
-        <div class="mb-5">
-            Möchtest du das Turnier
-            <strong>"{{ $tournament->name }}"</strong>
-            wirklich beenden?
-        </div>
-        @if(!$tournament->currentRound()->isCompleted())
-            <div class="mb-5">
-                <strong>Die aktuelle Turnierrunde ist noch nicht ausgespielt!</strong>
-            </div>
-        @endif
-
-        <div class="flex justify-end gap-3">
-            <flux:modal.close>
-                <flux:button variant="ghost">Abbrechen</flux:button>
-            </flux:modal.close>
-
-            <flux:button variant="danger" wire:click="finishTournament">
-                Ja
-            </flux:button>
-        </div>
-    </flux:modal>
 </div>

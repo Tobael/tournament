@@ -47,7 +47,7 @@ class Tournament extends Model
         return $this->hasMany(Round::class);
     }
 
-    public function currentRound(): Round {
+    public function currentRound(): ?Round {
         return $this->rounds()->orderBy('round', 'desc')->first();
     }
 
