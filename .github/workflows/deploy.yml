@@ -36,7 +36,6 @@ jobs:
           script: |
             cd mtg
             echo "${{ secrets.ENV_FILE }}" > .env
-            echo "TEST=asdasdasd" >> .env
             echo "FLUX_USERNAME=${{secrets.FLUX_USERNAME}}" >> .env
             echo "FLUX_LICENSE_KEY=${{secrets.FLUX_LICENSE_KEY}}" >> .env
             docker compose --env-file ./.env up -d --build --remove-orphans
