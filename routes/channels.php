@@ -8,5 +8,5 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('tournament.{id}', function ($user, $id) {
-    return Tournament::find($id)->users()->where('id', $user->id)->exists();
+    return Tournament::find($id)->users()->where('user_id', $user->id)->exists();
 });
