@@ -3,7 +3,6 @@
 # stage 1: build stage
 FROM php:8.4-fpm-alpine as build
 
-ARG TEST
 ARG FLUX_USERNAME
 ARG FLUX_LICENSE_KEY
 
@@ -36,7 +35,6 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
-RUN echo "${TEST}"
 RUN composer config http-basic.composer.fluxui.dev "${FLUX_USERNAME}" "${FLUX_LICENSE_KEY}"
 
 # install php and node.js dependencies

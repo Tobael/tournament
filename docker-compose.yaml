@@ -7,7 +7,6 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        TEST: ${TEST}
         FLUX_LICENSE_KEY: ${FLUX_LICENSE_KEY}
         FLUX_USERNAME: ${FLUX_USERNAME}
     environment:
