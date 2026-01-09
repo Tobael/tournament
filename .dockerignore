@@ -9,7 +9,6 @@
 /public/bucket
 /storage/*.key
 /vendor
-.env
 .env.example
 .env.backup
 .env.production
