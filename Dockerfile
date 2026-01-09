@@ -87,4 +87,4 @@ COPY ./nginx.conf /etc/nginx/http.d/default.conf
 
 WORKDIR /var/www/html
 
-CMD ["sh", "-c", "php-fpm -F & nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "php artisan reverb:start --host=0.0.0.0 --port=8080 & php-fpm -F & nginx -g 'daemon off;'"]
