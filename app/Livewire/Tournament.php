@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\RoundMatchResult;
 use App\Enums\Status;
+use App\Events\TournamentUpdated;
 use App\Models\RoundMatch;
 use App\Models\TournamentUser;
 use App\SwissTournamentHandler;
@@ -17,6 +18,13 @@ class Tournament extends Component
     public function mount(\App\Models\Tournament $tournament)
     {
         $this->tournament = $tournament;
+    }
+
+    protected function getListeners(): array
+    {
+        return [
+            "echo:tournament.{$this->tournament->id}, TournamentUpdated" => "refresh",
+        ];
     }
 
     public function deleteParticipant(TournamentUser $tournamentUser)
@@ -44,6 +52,7 @@ class Tournament extends Component
     public function finishTournament(): void
     {
         $this->tournament->update(['status' => Status::CLOSED]);
+        broadcast(new TournamentUpdated($this->tournament->id))->toOthers();
         $this->modal('finish-tournament')->close();
     }
 
@@ -53,6 +62,7 @@ class Tournament extends Component
             $this->tournament->update(['status' => Status::IN_PROGRESS]);
         }
         SwissTournamentHandler::create($this->tournament)->generateNextRound();
+        broadcast(new TournamentUpdated($this->tournament->id))->toOthers();
     }
 
     public function updateCurrentMatchForUser(RoundMatchResult $result): void
@@ -61,5 +71,7 @@ class Tournament extends Component
         $match->update([
             'result' => $result,
         ]);
+
+        broadcast(new TournamentUpdated($this->tournament->id))->toOthers();
     }
 }

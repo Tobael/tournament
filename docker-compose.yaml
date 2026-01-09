@@ -1,3 +1,4 @@
+
 services:
   laravel:
     restart: unless-stopped
@@ -25,17 +26,25 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # HTTP
+      # =========================
+      # HTTP (Laravel / Nginx)
+      # =========================
       - "traefik.http.routers.mtg.rule=Host(`mtg.betz.coffee`)"
       - "traefik.http.routers.mtg.entrypoints=websecure"
       - "traefik.http.routers.mtg.tls=true"
+      - "traefik.http.routers.mtg.service=mtg"
       - "traefik.http.services.mtg.loadbalancer.server.port=80"
 
-      # WEBSOCKETS (Reverb)
+      # =========================
+      # WEBSOCKET (Reverb)
+      # =========================
       - "traefik.http.routers.mtg-ws.rule=Host(`mtg.betz.coffee`) && PathPrefix(`/app`)"
       - "traefik.http.routers.mtg-ws.entrypoints=websecure"
       - "traefik.http.routers.mtg-ws.tls=true"
+      - "traefik.http.routers.mtg-ws.service=mtg-ws"
       - "traefik.http.services.mtg-ws.loadbalancer.server.port=8080"
+
+
 
 networks:
   external_network:
