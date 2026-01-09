@@ -3,6 +3,8 @@ services:
   laravel:
     restart: unless-stopped
     container_name: magic_tournament
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: ./Dockerfile
