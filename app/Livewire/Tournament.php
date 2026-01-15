@@ -5,10 +5,8 @@ namespace App\Livewire;
 use App\Enums\RoundMatchResult;
 use App\Enums\Status;
 use App\Events\TournamentUpdated;
-use App\Models\RoundMatch;
 use App\Models\TournamentUser;
 use App\SwissTournamentHandler;
-use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Tournament extends Component
@@ -23,7 +21,7 @@ class Tournament extends Component
     protected function getListeners(): array
     {
         return [
-            "echo:tournament.{$this->tournament->id}, TournamentUpdated" => "refresh",
+            "echo-private:tournament.{$this->tournament->id},TournamentUpdated" => 'refresh',
         ];
     }
 
@@ -52,7 +50,7 @@ class Tournament extends Component
     public function finishTournament(): void
     {
         $this->tournament->update(['status' => Status::CLOSED]);
-        broadcast(new TournamentUpdated($this->tournament->id))->toOthers();
+        event(new TournamentUpdated($this->tournament->id));
         $this->modal('finish-tournament')->close();
     }
 
@@ -62,7 +60,7 @@ class Tournament extends Component
             $this->tournament->update(['status' => Status::IN_PROGRESS]);
         }
         SwissTournamentHandler::create($this->tournament)->generateNextRound();
-        broadcast(new TournamentUpdated($this->tournament->id))->toOthers();
+        event(new TournamentUpdated($this->tournament->id));
     }
 
     public function updateCurrentMatchForUser(RoundMatchResult $result): void
@@ -72,6 +70,6 @@ class Tournament extends Component
             'result' => $result,
         ]);
 
-        broadcast(new TournamentUpdated($this->tournament->id))->toOthers();
+        event(new TournamentUpdated($this->tournament->id));
     }
 }
