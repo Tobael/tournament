@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Collection;
 
 class Tournament extends Model
 {
@@ -47,7 +48,8 @@ class Tournament extends Model
         return $this->hasMany(Round::class);
     }
 
-    public function currentRound(): ?Round {
+    public function currentRound(): ?Round
+    {
         return $this->rounds()->orderBy('round', 'desc')->first();
     }
 
@@ -64,6 +66,32 @@ class Tournament extends Model
             ->orderBy('round', 'desc')
             ->first()
             ->matches
-            ->first(fn (RoundMatch $match) => $match->player_a_id == $tournamentUser->id || $match->player_b_id == $tournamentUser->id);
+            ->first(fn(RoundMatch $match) => $match->player_a_id == $tournamentUser->id || $match->player_b_id == $tournamentUser->id);
+    }
+
+    public function standings(): Collection
+    {
+        $currentPoints = null;
+        $place = 0;
+
+        return $this->users
+            ->map(fn(TournamentUser $tuser) => [
+                'id' => $tuser->id,
+                'name' => $tuser->user->name,
+                'deck' => $tuser->deckname,
+                'games' => $tuser->games(),
+                'points' => $tuser->points(),
+            ])
+            ->sortBy([['points', 'desc']])
+            ->values()
+            ->map(function (array $standing) use (&$currentPoints, &$place) {
+                if ($currentPoints != $standing['points']) {
+                    $currentPoints = $standing['points'];
+                    $place++;
+                    $standing['place'] = $place;
+                }
+
+                return $standing;
+            });
     }
 }

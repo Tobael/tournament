@@ -38,4 +38,13 @@ class TournamentUser extends Model
                 return $carry + $match->result->toPoints()[$index];
             }, 0);
     }
+
+    public function games(): int
+    {
+        return $this->tournament
+            ->matches()
+            ->hasUser($this)
+            ->get()
+            ->count();
+    }
 }
