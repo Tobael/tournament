@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('round_matches', function (Blueprint $table) {
             $table->id();
             $table->enum('result', RoundMatchResult::cases())->nullable();
-            $table->foreignId('round_id')->constrained();
+            $table->foreignId('round_id')->constrained()->cascadeOnDelete();
             $table->foreignId('player_a_id')->constrained(table: 'tournament_users', column: 'id');
             $table->foreignId('player_b_id')->nullable()->constrained(table: 'tournament_users', column: 'id');
             $table->timestamps();
