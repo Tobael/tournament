@@ -51,57 +51,61 @@
             <flux:button :variant="$tournament->currentRound()->isCompleted() ? 'primary' : 'danger'"
                          wire:click="openFinishModal">Turnier beenden
             </flux:button>
-            @if ($tournament->currentRound()->isCompleted())
+            @if ($tournament->currentRound()->isCompleted() && !$tournament->allMatchesGenerated())
                 <flux:button wire:click="startNextRound">Nächste Runde starten</flux:button>
             @endif
         </flux:button.group>
 
         <flux:tab.group class="pt-4">
-            <flux:tabs wire:model="tab">
-                <flux:tab name="round" icon="users">Runde {{ $this->tournament->currentRound()->round }}</flux:tab>
+            <flux:tabs wire:model="tab" scrollable scrollable:fade>
+                @foreach($tournament->rounds as $round)
+                    <flux:tab :name="$round->id">Runde {{ $round->round }}</flux:tab>
+                @endforeach
                 <flux:tab name="standings" icon="table">Tabelle</flux:tab>
             </flux:tabs>
 
-            <flux:tab.panel name="round">
-                <flux:table>
-                    <flux:table.columns>
-                        <flux:table.column>Player A</flux:table.column>
-                        <flux:table.column>Result</flux:table.column>
-                        <flux:table.column>Player B</flux:table.column>
-                    </flux:table.columns>
-                    <flux:table.rows>
-                        @foreach($matches as $match)
-                            <flux:table.row :key="$match->id">
-                                <flux:table.cell>{{ $match->playerA->user->name }}</flux:table.cell>
-                                <flux:table.cell>{{ $match->result }}</flux:table.cell>
-                                <flux:table.cell>{{ $match->playerB->user->name ?? 'BYE' }}</flux:table.cell>
-                            </flux:table.row>
-                        @endforeach
-                    </flux:table.rows>
-                </flux:table>
+            @foreach($tournament->rounds as $round)
+                <flux:tab.panel :name="$round->id">
+                    <flux:table>
+                        <flux:table.columns>
+                            <flux:table.column>Player A</flux:table.column>
+                            <flux:table.column>Result</flux:table.column>
+                            <flux:table.column>Player B</flux:table.column>
+                        </flux:table.columns>
+                        <flux:table.rows>
+                            @foreach($round->matches as $match)
+                                <flux:table.row :key="$match->id">
+                                    <flux:table.cell>{{ $match->playerA->user->name }}</flux:table.cell>
+                                    <flux:table.cell>{{ $match->result }}</flux:table.cell>
+                                    <flux:table.cell>{{ $match->playerB->user->name ?? 'BYE' }}</flux:table.cell>
+                                </flux:table.row>
+                            @endforeach
+                        </flux:table.rows>
+                    </flux:table>
 
-                @if(!$currentMatch->result)
-                    <flux:card class="flex flex-col gap-4 align-items-center">
-                        <flux:heading size="lg">{{ $currentMatch->playerA->user->name }}
-                            - {{ $currentMatch->playerB->user->name }}</flux:heading>
+                    @if($loop->last && !$round->getMatchForUser()->result)
+                        <flux:card class="flex flex-col gap-4 align-items-center">
+                            <flux:heading size="lg">{{ $round->getMatchForUser()->playerA->user->name }}
+                                - {{ $round->getMatchForUser()->playerB->user->name }}</flux:heading>
 
-                        <flux:button.group class="w-full">
-                            <flux:button class="w-full"
-                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOZERO }}')">{{ RoundMatchResult::TWOZERO }}</flux:button>
-                            <flux:button class="w-full"
-                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ZEROTWO }}')">{{ RoundMatchResult::ZEROTWO }}</flux:button>
-                        </flux:button.group>
-                        <flux:button.group>
-                            <flux:button class="w-full"
-                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOONE }}')">{{ RoundMatchResult::TWOONE }}</flux:button>
-                            <flux:button class="w-full"
-                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ONETWO }}')">{{ RoundMatchResult::ONETWO }}</flux:button>
-                        </flux:button.group>
-                        <flux:button
-                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::DRAW }}')">{{ RoundMatchResult::DRAW }}</flux:button>
-                    </flux:card>
-                @endif
-            </flux:tab.panel>
+                            <flux:button.group class="w-full">
+                                <flux:button class="w-full"
+                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOZERO }}')">{{ RoundMatchResult::TWOZERO }}</flux:button>
+                                <flux:button class="w-full"
+                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ZEROTWO }}')">{{ RoundMatchResult::ZEROTWO }}</flux:button>
+                            </flux:button.group>
+                            <flux:button.group>
+                                <flux:button class="w-full"
+                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOONE }}')">{{ RoundMatchResult::TWOONE }}</flux:button>
+                                <flux:button class="w-full"
+                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ONETWO }}')">{{ RoundMatchResult::ONETWO }}</flux:button>
+                            </flux:button.group>
+                            <flux:button
+                                wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::DRAW }}')">{{ RoundMatchResult::DRAW }}</flux:button>
+                        </flux:card>
+                    @endif
+                </flux:tab.panel>
+            @endforeach
 
             <flux:tab.panel name="standings">
                 <flux:table>

@@ -58,17 +58,6 @@ class Tournament extends Model
         return $this->hasManyThrough(RoundMatch::class, Round::class);
     }
 
-    public function getCurrentMatchFor(User $user): RoundMatch
-    {
-        $tournamentUser = $user->getTournamentUser($this);
-
-        return $this->rounds()
-            ->orderBy('round', 'desc')
-            ->first()
-            ->matches
-            ->first(fn(RoundMatch $match) => $match->player_a_id == $tournamentUser->id || $match->player_b_id == $tournamentUser->id);
-    }
-
     public function standings(): Collection
     {
         $currentPoints = null;
@@ -82,7 +71,7 @@ class Tournament extends Model
                 'games' => $tuser->games(),
                 'points' => $tuser->points(),
             ])
-            ->sortBy([['points', 'desc']])
+            ->sortByDesc('points')
             ->values()
             ->map(function (array $standing) use (&$currentPoints, &$place) {
                 if ($currentPoints != $standing['points']) {
@@ -93,5 +82,17 @@ class Tournament extends Model
 
                 return $standing;
             });
+    }
+
+    public function allMatchesGenerated(): bool
+    {
+        $participantCount = $this->users->count();
+
+        if ($participantCount % 2 != 0) {
+            // we need to account for bye games (bye counts as an additional player)
+            $participantCount++;
+        }
+
+        return $this->status == Status::IN_PROGRESS && $this->matches->count() >= ($participantCount * ($participantCount - 1)) / 2;
     }
 }

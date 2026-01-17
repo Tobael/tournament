@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Enums\RoundMatchResult;
 use App\Enums\Status;
 use App\Events\TournamentUpdated;
-use App\Models\TournamentUser;
 use App\SwissTournamentHandler;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -14,11 +13,12 @@ class Tournament extends Component
 {
     public \App\Models\Tournament $tournament;
 
-    public string $tab = "round";
+    public string $tab;
 
     public function mount(\App\Models\Tournament $tournament)
     {
         $this->tournament = $tournament;
+        $this->tab = $tournament->rounds->sortByDesc('round')->first()->id;
     }
 
     protected function getListeners(): array
@@ -28,22 +28,10 @@ class Tournament extends Component
         ];
     }
 
-    public function deleteParticipant(TournamentUser $tournamentUser)
-    {
-        // TODO
-    }
-
     #[Layout('components.layouts.app')]
     public function render()
     {
-        return match ($this->tournament->status) {
-            Status::OPEN, Status::CLOSED => view('livewire.tournament'),
-            Status::IN_PROGRESS => view('livewire.tournament', [
-                'matches' => $this->tournament->matches,
-                'rounds' => $this->tournament->rounds,
-                'currentMatch' => $this->tournament->getCurrentMatchFor(auth()->user()),
-            ]),
-        };
+        return view('livewire.tournament');
     }
 
     public function openFinishModal(): void
@@ -64,12 +52,13 @@ class Tournament extends Component
             $this->tournament->update(['status' => Status::IN_PROGRESS]);
         }
         SwissTournamentHandler::create($this->tournament)->generateNextRound();
+        $this->tab++;
         event(new TournamentUpdated($this->tournament->id));
     }
 
     public function updateCurrentMatchForUser(RoundMatchResult $result): void
     {
-        $match = $this->tournament->getCurrentMatchFor(auth()->user());
+        $match = $this->tournament->rounds->sortByDesc('round')->first()->getCurrentMatchForUser();
         $match->update([
             'result' => $result,
         ]);

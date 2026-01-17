@@ -23,7 +23,15 @@ class Round extends Model
         return $this->hasMany(RoundMatch::class);
     }
 
-    public function isCompleted(): bool {
+    public function isCompleted(): bool
+    {
         return $this->matches->reduce(fn(bool $carry, RoundMatch $match) => $carry && $match->result, true);
+    }
+
+    public function getMatchForUser(): ?RoundMatch
+    {
+        $tuser = auth()->user()->getTournamentUser($this->tournament);
+
+        return $this->matches->first(fn(RoundMatch $match) => $match->player_a_id == $tuser->id || $match->player_b_id == $tuser->id);
     }
 }
