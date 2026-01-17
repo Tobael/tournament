@@ -36,9 +36,7 @@
                     </flux:table.cell>
 
                     <flux:table.cell>
-                        @if(
-                            $tournament->status === App\Enums\Status::OPEN && !$this->userParticipates($tournament)
-                        )
+                        @if($tournament->status == App\Enums\Status::OPEN && $tournament->users()->where('user_id', auth()->id())->exists())
                             <flux:button icon="arrow-right-end-on-rectangle" variant="ghost" size="sm"
                                          class="cursor-pointer"
                                          wire:click="openParticipateModal({{$tournament->id}})"

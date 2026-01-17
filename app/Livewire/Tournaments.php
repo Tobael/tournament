@@ -99,12 +99,6 @@ class Tournaments extends Component
         return Tournament::query()->tap(fn($query) => $this->sortBy ? $query->orderBy($this->sortBy, $this->sortDirection) : $query)->paginate(10);
     }
 
-    #[Computed]
-    public function userParticipates(Tournament $tournament): bool
-    {
-        return $tournament->users->pluck("user_íd")->contains(auth()->id());
-    }
-
     public function openParticipateModal(Tournament $tournament): void
     {
         $this->selectedTournament = $tournament;
@@ -126,5 +120,4 @@ class Tournaments extends Component
         $this->selectedTournament = $tournament;
         $this->modal('delete-tournament')->show();
     }
-
 }
