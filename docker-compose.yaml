@@ -22,7 +22,7 @@ services:
       # =========================
       # BASIC AUTH MIDDLEWARE
       # =========================
-      - "traefik.http.middlewares.mtg-auth.basicauth.users=user:$$apr1$dqzLxx.C$$X83MJpJgEWQz9Hiz0NX7n1"
+      - "traefik.http.middlewares.mtg-auth.basicauth.users=user:$$apr1$$dqzLxx.C$$X83MJpJgEWQz9Hiz0NX7n1"
 
       # =========================
       # HTTP (Laravel / Nginx)
