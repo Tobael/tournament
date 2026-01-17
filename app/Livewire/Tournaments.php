@@ -60,7 +60,9 @@ class Tournaments extends Component
 
     public function deleteTournament(): void
     {
-        $this->selectedTournament->delete();
+        if (auth()->user()->is_admin) {
+            $this->selectedTournament->delete();
+        }
         $this->modal('delete-tournament')->close();
     }
 

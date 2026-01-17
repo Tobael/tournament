@@ -48,9 +48,11 @@
                         <flux:button icon="pencil" variant="ghost" size="sm" class="cursor-pointer"
                                      wire:click.stop="openEditModal({{$tournament->id}})"
                                      inset="top bottom"></flux:button>
-                        <flux:button icon="trash" variant="ghost" size="sm" class="cursor-pointer"
-                                     wire:click.stop="openDeleteModal({{$tournament->id}})"
-                                     inset="top bottom"></flux:button>
+                        @if(auth()->user()->is_admin)
+                            <flux:button icon="trash" variant="ghost" size="sm" class="cursor-pointer"
+                                         wire:click.stop="openDeleteModal({{$tournament->id}})"
+                                         inset="top bottom"></flux:button>
+                        @endif
                     </flux:table.cell>
                 </flux:table.row>
             @endforeach

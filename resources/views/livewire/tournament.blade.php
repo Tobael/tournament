@@ -3,6 +3,7 @@
     use App\Enums\RoundMatchResult;
 @endphp
 <div>
+    <flux:heading>{{$tournament->name}}</flux:heading>
     @if($tournament->status === Status::OPEN)
         <flux:button wire:click="startNextRound">Turnier starten</flux:button>
         <flux:table>
@@ -47,7 +48,7 @@
 
         <flux:button.group>
             <flux:button :variant="$tournament->currentRound()->isCompleted() ? 'primary' : 'danger'"
-                        wire:click="openFinishModal">Turnier beenden
+                         wire:click="openFinishModal">Turnier beenden
             </flux:button>
             @if ($tournament->currentRound()->isCompleted())
                 <flux:button wire:click="startNextRound">Nächste Runde starten</flux:button>
@@ -80,17 +81,23 @@
 
                 @if(!$currentMatch->result)
                     <flux:card class="flex flex-col gap-4 align-items-center">
-                        <flux:heading size="lg">{{ $currentMatch->playerA->user->name }} - {{ $currentMatch->playerB->user->name }}</flux:heading>
+                        <flux:heading size="lg">{{ $currentMatch->playerA->user->name }}
+                            - {{ $currentMatch->playerB->user->name }}</flux:heading>
 
                         <flux:button.group class="w-full">
-                            <flux:button class="w-full" wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOZERO }}')">{{ RoundMatchResult::TWOZERO }}</flux:button>
-                            <flux:button class="w-full" wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ZEROTWO }}')">{{ RoundMatchResult::ZEROTWO }}</flux:button>
+                            <flux:button class="w-full"
+                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOZERO }}')">{{ RoundMatchResult::TWOZERO }}</flux:button>
+                            <flux:button class="w-full"
+                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ZEROTWO }}')">{{ RoundMatchResult::ZEROTWO }}</flux:button>
                         </flux:button.group>
                         <flux:button.group>
-                            <flux:button class="w-full" wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOONE }}')">{{ RoundMatchResult::TWOONE }}</flux:button>
-                            <flux:button class="w-full" wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ONETWO }}')">{{ RoundMatchResult::ONETWO }}</flux:button>
+                            <flux:button class="w-full"
+                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOONE }}')">{{ RoundMatchResult::TWOONE }}</flux:button>
+                            <flux:button class="w-full"
+                                         wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ONETWO }}')">{{ RoundMatchResult::ONETWO }}</flux:button>
                         </flux:button.group>
-                        <flux:button wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::DRAW }}')">{{ RoundMatchResult::DRAW }}</flux:button>
+                        <flux:button
+                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::DRAW }}')">{{ RoundMatchResult::DRAW }}</flux:button>
                     </flux:card>
                 @endif
             </flux:tab.panel>
@@ -119,6 +126,25 @@
             </flux:tab.panel>
         </flux:tab.group>
     @elseif($tournament->status === Status::CLOSED)
-        Tournament {{ $tournament->id }} is closed
+        <flux:table>
+            <flux:table.columns>
+                <flux:table.column>Platz</flux:table.column>
+                <flux:table.column>Name</flux:table.column>
+                <flux:table.column>Deck</flux:table.column>
+                <flux:table.column>Spiele</flux:table.column>
+                <flux:table.column>Punkte</flux:table.column>
+            </flux:table.columns>
+            <flux:table.rows>
+                @foreach($tournament->standings() as $user)
+                    <flux:table.row :key="$user['id']">
+                        <flux:table.cell>{{ isset($user['place']) ? "{$user['place']}." : '' }}</flux:table.cell>
+                        <flux:table.cell>{{ $user['name'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $user['deck'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $user['games'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $user['points'] }}</flux:table.cell>
+                    </flux:table.row>
+                @endforeach
+            </flux:table.rows>
+        </flux:table>
     @endif
 </div>

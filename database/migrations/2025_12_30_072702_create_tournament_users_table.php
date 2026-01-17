@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tournament_users', function (Blueprint $table) {
             $table->id();
             $table->string('deckname')->nullable();
-            $table->foreignId('tournament_id')->constrained();
+            $table->foreignId('tournament_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained();
             $table->timestamps();
         });
