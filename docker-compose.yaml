@@ -20,16 +20,23 @@ services:
       - "traefik.enable=true"
 
       # =========================
+      # BASIC AUTH MIDDLEWARE
+      # =========================
+      - "traefik.http.middlewares.mtg-auth.basicauth.users=user:$apr1$dqzLxx.C$X83MJpJgEWQz9Hiz0NX7n1"
+
+      # =========================
       # HTTP (Laravel / Nginx)
       # =========================
       - "traefik.http.routers.mtg.rule=Host(`mtg.betz.coffee`)"
       - "traefik.http.routers.mtg.entrypoints=websecure"
       - "traefik.http.routers.mtg.tls=true"
       - "traefik.http.routers.mtg.service=mtg"
+      - "traefik.http.routers.mtg.middlewares=mtg-auth"
       - "traefik.http.services.mtg.loadbalancer.server.port=80"
 
       # =========================
       # WEBSOCKET (Reverb)
+      # (no auth so WS still works)
       # =========================
       - "traefik.http.routers.mtg-ws.rule=Host(`mtg.betz.coffee`) && PathPrefix(`/app`)"
       - "traefik.http.routers.mtg-ws.entrypoints=websecure"
