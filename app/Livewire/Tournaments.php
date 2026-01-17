@@ -3,10 +3,12 @@
 namespace App\Livewire;
 
 use App\Enums\Status;
+use App\Events\TournamentUpdated;
 use App\Models\Group;
 use App\Models\Tournament;
 use App\Models\TournamentUser;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -16,6 +18,7 @@ class Tournaments extends Component
     public string $name;
     #[Validate('required|int')]
     public int $groupId;
+
     public ?string $deckname = null;
     public string $sortDirection = 'desc';
     public string $sortBy = 'created_at';
@@ -23,6 +26,10 @@ class Tournaments extends Component
     public ?Tournament $selectedTournament = null;
     public ?int $selectedTournamentId = null;
 
+    public function mount(): void
+    {
+        $this->groupId = Group::first()->id;
+    }
 
     public function sort($column): void
     {
@@ -34,9 +41,12 @@ class Tournaments extends Component
         }
     }
 
+    #[Layout('components.layouts.app', ['title' => 'Turniere'])]
     public function render()
     {
-        return view('livewire.tournaments', ['groups' => Group::all()])->layout('components.layouts.app', ["title" => "Tournaments"]);
+        return view('livewire.tournaments', [
+            'groups' => Group::all(),
+        ]);
     }
 
     public function openCreateModal(): void
@@ -54,6 +64,7 @@ class Tournaments extends Component
             'status' => Status::OPEN,
             'group_id' => $this->groupId
         ]);
+
         $this->modal('create-tournament')->close();
         $this->reset(['name', 'groupId']);
     }
@@ -91,6 +102,8 @@ class Tournaments extends Component
                 'deckname' => $this->deckname,
             ]
         );
+
+        event(new TournamentUpdated($this->selectedTournament->id));
 
         $this->modal('participate-tournament')->close();
     }

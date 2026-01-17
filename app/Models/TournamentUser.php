@@ -35,7 +35,7 @@ class TournamentUser extends Model
             ->get()
             ->reduce(function (int $carry, RoundMatch $match) {
                 $index = $match->player_a_id == $this->id ? 0 : 1;
-                return $carry + $match->result->toPoints()[$index];
+                return $carry + ($match->result?->toPoints() ?? [0, 0])[$index];
             }, 0);
     }
 
@@ -45,6 +45,7 @@ class TournamentUser extends Model
             ->matches()
             ->hasUser($this)
             ->get()
+            ->filter(fn(RoundMatch $match) => $match->result)
             ->count();
     }
 }

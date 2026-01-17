@@ -7,11 +7,14 @@ use App\Enums\Status;
 use App\Events\TournamentUpdated;
 use App\Models\TournamentUser;
 use App\SwissTournamentHandler;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 class Tournament extends Component
 {
     public \App\Models\Tournament $tournament;
+
+    public string $tab = "round";
 
     public function mount(\App\Models\Tournament $tournament)
     {
@@ -30,6 +33,7 @@ class Tournament extends Component
         // TODO
     }
 
+    #[Layout('components.layouts.app')]
     public function render()
     {
         return match ($this->tournament->status) {

@@ -3,7 +3,8 @@
     use App\Enums\RoundMatchResult;
 @endphp
 <div>
-    <flux:heading>{{$tournament->name}}</flux:heading>
+    <flux:heading size="xl" class="mb-8">{{$tournament->name}}</flux:heading>
+
     @if($tournament->status === Status::OPEN)
         <flux:button wire:click="startNextRound">Turnier starten</flux:button>
         <flux:table>

@@ -95,7 +95,7 @@
             <form wire:submit="editTournament" class="space-y-6">
                 <flux:input wire:model="name" label="Name"/>
 
-                <flux:select wire:model="groupId" variant="listbox">
+                <flux:select wire:model="groupId" placeholder="Gruppe auswählen...">
                     @foreach($groups as $group)
                         <flux:select.option value="{{ $group->id }}">
                             {{ $group->name }}
@@ -149,7 +149,6 @@
 
             <flux:select
                 wire:model="groupId"
-                variant="listbox"
                 placeholder="Gruppe auswählen..."
             >
                 @foreach ($groups as $group)
