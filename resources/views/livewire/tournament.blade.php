@@ -47,11 +47,25 @@
             </div>
         </flux:modal>
 
+        <flux:modal name="no-more-matches">
+            <flux:heading size="lg">Swiss Algorithmus</flux:heading>
+
+            <div class="mb-5">
+                Der Algorithmus konnte keine validen Matches finden für alle Teilnehmer.
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <flux:modal.close>
+                    <flux:button variant="primary">OK</flux:button>
+                </flux:modal.close>
+            </div>
+        </flux:modal>
+
         <flux:button.group>
             <flux:button :variant="$tournament->currentRound()->isCompleted() ? 'primary' : 'danger'"
                          wire:click="openFinishModal">Turnier beenden
             </flux:button>
-            @if ($tournament->currentRound()->isCompleted() && !$tournament->allMatchesGenerated())
+            @if ($tournament->currentRound()->isCompleted() && !$tournament->allMatchesGenerated() && !$hideNextRoundButton)
                 <flux:button wire:click="startNextRound">Nächste Runde starten</flux:button>
             @endif
         </flux:button.group>

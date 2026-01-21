@@ -15,6 +15,8 @@ class Tournament extends Component
 
     public string $tab;
 
+    public bool $hideNextRoundButton = false;
+
     public function mount(\App\Models\Tournament $tournament)
     {
         $this->tournament = $tournament;
@@ -52,7 +54,12 @@ class Tournament extends Component
             $this->tournament->update(['status' => Status::IN_PROGRESS]);
         }
 
-        $swissTournamentService->generateNextRound($this->tournament);
+        if (!$swissTournamentService->generateNextRound($this->tournament)) {
+            $this->modal('no-more-matches')->show();
+            $this->hideNextRoundButton = true;
+
+            return;
+        }
 
         $this->tab = $this->tournament->getLastRound()->id;
 
