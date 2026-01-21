@@ -95,4 +95,9 @@ class Tournament extends Model
 
         return $this->status == Status::IN_PROGRESS && $this->matches->count() >= ($participantCount * ($participantCount - 1)) / 2;
     }
+
+    public function getLastRound(): ?Round
+    {
+        return $this->rounds()->orderByDesc('round')->first();
+    }
 }

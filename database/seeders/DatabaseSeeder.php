@@ -6,7 +6,7 @@ use App\Models\Group;
 use App\Models\Tournament;
 use App\Models\TournamentUser;
 use App\Models\User;
-use App\SwissTournamentHandler;
+use App\Services\SwissTournamentService;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(): void
+    public function run(SwissTournamentService $swissTournamentService): void
     {
         User::factory()->admin()->withoutTwoFactor()->create([
             'name' => 'Admin',
@@ -33,6 +33,6 @@ class DatabaseSeeder extends Seeder
             TournamentUser::factory()->for($user)->for($tournament)->create();
         }
 
-        SwissTournamentHandler::create($tournament)->generateNextRound();
+        $swissTournamentService->generateNextRound($tournament);
     }
 }

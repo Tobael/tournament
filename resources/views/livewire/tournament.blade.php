@@ -83,7 +83,7 @@
                         </flux:table.rows>
                     </flux:table>
 
-                    @if($loop->last && !$round->getMatchForUser()->result)
+                    @if($loop->last && $round->getMatchForUser() && !$round->getMatchForUser()->result)
                         <flux:card class="flex flex-col gap-4 align-items-center">
                             <flux:heading size="lg">{{ $round->getMatchForUser()->playerA->user->name }}
                                 - {{ $round->getMatchForUser()->playerB->user->name }}</flux:heading>
