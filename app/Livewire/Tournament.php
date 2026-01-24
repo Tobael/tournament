@@ -68,7 +68,7 @@ class Tournament extends Component
 
     public function updateCurrentMatchForUser(RoundMatchResult $result): void
     {
-        $match = $this->tournament->rounds->sortByDesc('round')->first()->getCurrentMatchForUser();
+        $match = $this->tournament->rounds->sortByDesc('round')->first()->getMatchForUser();
         $match->update([
             'result' => $result,
         ]);
