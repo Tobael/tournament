@@ -13,8 +13,10 @@ enum RoundMatchResult: string
     public function toPoints(): array
     {
         return match ($this) {
-            self::TWOZERO, self::TWOONE => [3, 0],
-            self::ONETWO, self::ZEROTWO => [0, 3],
+            self::TWOZERO => [2, 0],
+            self::TWOONE => [2, 1],
+            self::ZEROTWO => [0, 2],
+            self::ONETWO => [1, 2],
             self::DRAW => [1, 1],
         };
     }
