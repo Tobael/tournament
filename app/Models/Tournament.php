@@ -74,7 +74,7 @@ class Tournament extends Model
             ->sortByDesc('points')
             ->values()
             ->map(function (array $standing) use (&$currentPoints, &$place) {
-                if ($currentPoints != $standing['points']) {
+                if ($currentPoints !== $standing['points']) {
                     $currentPoints = $standing['points'];
                     $place++;
                     $standing['place'] = $place;
@@ -94,10 +94,5 @@ class Tournament extends Model
         }
 
         return $this->status == Status::IN_PROGRESS && $this->matches->count() >= ($participantCount * ($participantCount - 1)) / 2;
-    }
-
-    public function getLastRound(): ?Round
-    {
-        return $this->rounds()->orderByDesc('round')->first();
     }
 }

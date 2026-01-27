@@ -64,7 +64,7 @@ class Tournament extends Component
             return;
         }
 
-        $this->tab = $this->tournament->getLastRound()->id;
+        $this->tab = $this->tournament->currentRound()->id;
 
         event(new TournamentUpdated($this->tournament->id));
     }
