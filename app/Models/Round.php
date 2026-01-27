@@ -32,6 +32,10 @@ class Round extends Model
     {
         $tuser = auth()->user()->getTournamentUser($this->tournament);
 
+        if (!$tuser) {
+            return null;
+        }
+
         return $this->matches->first(fn(RoundMatch $match) => $match->player_a_id == $tuser->id || $match->player_b_id == $tuser->id);
     }
 }

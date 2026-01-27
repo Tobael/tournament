@@ -63,7 +63,7 @@ class User extends Authenticatable
             ->implode('');
     }
 
-    public function getTournamentUser(Tournament $tournament): TournamentUser
+    public function getTournamentUser(Tournament $tournament): ?TournamentUser
     {
         return $tournament->users()->where('user_id', $this->id)->first();
     }
