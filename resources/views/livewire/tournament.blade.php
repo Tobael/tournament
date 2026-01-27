@@ -145,25 +145,57 @@
             </flux:tab.panel>
         </flux:tab.group>
     @elseif($tournament->status === Status::CLOSED)
-        <flux:table>
-            <flux:table.columns>
-                <flux:table.column>Platz</flux:table.column>
-                <flux:table.column>Name</flux:table.column>
-                <flux:table.column>Deck</flux:table.column>
-                <flux:table.column>Spiele</flux:table.column>
-                <flux:table.column>Punkte</flux:table.column>
-            </flux:table.columns>
-            <flux:table.rows>
-                @foreach($tournament->standings() as $user)
-                    <flux:table.row :key="$user['id']">
-                        <flux:table.cell>{{ isset($user['place']) ? "{$user['place']}." : '' }}</flux:table.cell>
-                        <flux:table.cell>{{ $user['name'] }}</flux:table.cell>
-                        <flux:table.cell>{{ $user['deck'] }}</flux:table.cell>
-                        <flux:table.cell>{{ $user['games'] }}</flux:table.cell>
-                        <flux:table.cell>{{ $user['points'] }}</flux:table.cell>
-                    </flux:table.row>
+        <flux:tab.group class="pt-4">
+            <flux:tabs wire:model="tab" scrollable scrollable:fade>
+                @foreach($tournament->rounds as $round)
+                    <flux:tab :name="$round->id">Runde {{ $round->round }}</flux:tab>
                 @endforeach
-            </flux:table.rows>
-        </flux:table>
+                <flux:tab name="standings" icon="table">Tabelle</flux:tab>
+            </flux:tabs>
+
+            @foreach($tournament->rounds as $round)
+                <flux:tab.panel :name="$round->id">
+                    <flux:table>
+                        <flux:table.columns>
+                            <flux:table.column>Player A</flux:table.column>
+                            <flux:table.column>Result</flux:table.column>
+                            <flux:table.column>Player B</flux:table.column>
+                        </flux:table.columns>
+                        <flux:table.rows>
+                            @foreach($round->matches as $match)
+                                <flux:table.row :key="$match->id">
+                                    <flux:table.cell>{{ $match->playerA->user->name }}</flux:table.cell>
+                                    <flux:table.cell>{{ $match->result }}</flux:table.cell>
+                                    <flux:table.cell>{{ $match->playerB->user->name ?? 'BYE' }}</flux:table.cell>
+                                </flux:table.row>
+                            @endforeach
+                        </flux:table.rows>
+                    </flux:table>
+                </flux:tab.panel>
+            @endforeach
+
+            <flux:tab.panel name="standings">
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column>Platz</flux:table.column>
+                        <flux:table.column>Name</flux:table.column>
+                        <flux:table.column>Deck</flux:table.column>
+                        <flux:table.column>Spiele</flux:table.column>
+                        <flux:table.column>Punkte</flux:table.column>
+                    </flux:table.columns>
+                    <flux:table.rows>
+                        @foreach($tournament->standings() as $user)
+                            <flux:table.row :key="$user['id']">
+                                <flux:table.cell>{{ isset($user['place']) ? "{$user['place']}." : '' }}</flux:table.cell>
+                                <flux:table.cell>{{ $user['name'] }}</flux:table.cell>
+                                <flux:table.cell>{{ $user['deck'] }}</flux:table.cell>
+                                <flux:table.cell>{{ $user['games'] }}</flux:table.cell>
+                                <flux:table.cell>{{ $user['points'] }}</flux:table.cell>
+                            </flux:table.row>
+                        @endforeach
+                    </flux:table.rows>
+                </flux:table>
+            </flux:tab.panel>
+        </flux:tab.group>
     @endif
 </div>

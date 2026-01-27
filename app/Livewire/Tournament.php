@@ -20,7 +20,10 @@ class Tournament extends Component
     public function mount(\App\Models\Tournament $tournament)
     {
         $this->tournament = $tournament;
-        $this->tab = $tournament->getLastRound()?->id ?? 'standings';
+        $this->tab = match ($tournament->status) {
+            Status::OPEN, Status::CLOSED => 'standings',
+            Status::IN_PROGRESS => $tournament->currentRound()?->id ?? 'standings',
+        };
     }
 
     protected function getListeners(): array
