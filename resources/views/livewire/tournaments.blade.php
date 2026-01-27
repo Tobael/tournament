@@ -8,14 +8,17 @@
     </div>
     <flux:table :paginate="$this->tournaments">
         <flux:table.columns>
-            <flux:table.column sortable :sorted="$sortBy === 'name'" :direction="$sortDirection"
-                               wire:click="sort('name')">Name
+            <flux:table.column sortable :sorted="$sortBy === 'name'" :direction="$sortDirection" wire:click="sort('name')">
+                Name
             </flux:table.column>
-            <flux:table.column sortable :sorted="$sortBy === 'created_at'" :direction="$sortDirection"
-                               wire:click="sort('created_at')">Datum
+            <flux:table.column sortable :sorted="$sortBy === 'participants'" :direction="$sortDirection" wire:click="sort('participants')">
+                # Spieler
             </flux:table.column>
-            <flux:table.column sortable :sorted="$sortBy === 'status'" :direction="$sortDirection"
-                               wire:click="sort('status')">Status
+            <flux:table.column sortable :sorted="$sortBy === 'created_at'" :direction="$sortDirection" wire:click="sort('created_at')">
+                Datum
+            </flux:table.column>
+            <flux:table.column sortable :sorted="$sortBy === 'status'" :direction="$sortDirection" wire:click="sort('status')">
+                Status
             </flux:table.column>
             <flux:table.column></flux:table.column>
             <flux:table.column></flux:table.column>
@@ -28,8 +31,13 @@
                         {{ $tournament->name }}
                     </flux:table.cell>
 
-                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)"
-                        class="whitespace-nowrap">{{ $tournament->created_at->format('d.m.Y H:i:s') }}</flux:table.cell>
+                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)">
+                        {{ $tournament->users->count() }}
+                    </flux:table.cell>
+
+                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)" class="whitespace-nowrap">
+                        {{ $tournament->created_at->format('d.m.Y H:i:s') }}
+                    </flux:table.cell>
 
                     <flux:table.cell wire:navigate :href="route('tournament', $tournament)">
                         <flux:icon name="{{$tournament->status->toIcon()}}"></flux:icon>
