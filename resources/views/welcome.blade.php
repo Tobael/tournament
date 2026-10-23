@@ -1,7 +1,7 @@
 <x-layouts.app title="Spielrunde · Zusammen spielen">
     <section class="welcome-intro">
         <p class="eyebrow">KARTEN AUF DEN TISCH.</p>
-        <h1>Deine Runde.<br>Dein nächstes Match.</h1>
+        <h1>Deine Runde.<br><span class="hero-accent">Dein nächstes Match.</span></h1>
         <p class="muted">Paarungen, Ergebnisse und Tabelle – alles auf deinem Handy.</p>
     </section>
     <section class="saved-events" data-device-home data-auto-return="{{ request()->boolean('home') ? '0' : '1' }}" hidden><h2>Deine letzten Spielrunden</h2><p class="muted">Auf diesem Gerät gespeichert. Deine Teilnahme wird beim Öffnen automatisch wiederhergestellt.</p><div class="card-actions" data-saved-events></div></section>

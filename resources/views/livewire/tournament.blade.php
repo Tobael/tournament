@@ -67,7 +67,7 @@
                         <p>Wie ist dein Match ausgegangen? Wähle das Ergebnis aus deiner Sicht.</p>
                         <div class="score-grid">
                             @foreach(RoundMatchResult::cases() as $result)
-                                <button class="score-button" wire:click="updateCurrentMatchForUser('{{ ($isPlayerA ? $result : $result->reversed())->value }}')" wire:confirm="Dein Ergebnis {{ $result->label() }} gegen {{ $opponent }} speichern?" wire:loading.attr="disabled">
+                                <button class="score-button" data-outcome="{{ $result === RoundMatchResult::DRAW ? 'draw' : (in_array($result, [RoundMatchResult::TWOZERO, RoundMatchResult::TWOONE]) ? 'win' : 'loss') }}" wire:click="updateCurrentMatchForUser('{{ ($isPlayerA ? $result : $result->reversed())->value }}')" wire:confirm="Dein Ergebnis {{ $result->label() }} gegen {{ $opponent }} speichern?" wire:loading.attr="disabled">
                                     {{ $result->label() }}
                                     @if($result !== RoundMatchResult::DRAW)<small>{{ in_array($result, [RoundMatchResult::TWOZERO, RoundMatchResult::TWOONE]) ? 'Dein Sieg' : 'Deine Niederlage' }}</small>@endif
                                 </button>
