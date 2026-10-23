@@ -24,16 +24,16 @@ class Tournament extends Model
 
     public function participant(): ?TournamentUser
     {
-        if (auth()->check()) {
-            return $this->users()->where('user_id', auth()->id())->first();
-        }
-
+        // A recovered event identity is independent of the organizer login.
         $identity = session('participants.'.$this->id);
-        if (! $identity || empty($identity['token'])) {
-            return null;
+        if (is_array($identity) && ! empty($identity['id']) && ! empty($identity['token'])) {
+            $participant = $this->users()->whereKey($identity['id'])->where('recovery_hash', hash('sha256', $identity['token']))->first();
+            if ($participant) {
+                return $participant;
+            }
         }
 
-        return $this->users()->whereKey($identity['id'])->where('recovery_hash', hash('sha256', $identity['token']))->first();
+        return auth()->check() ? $this->users()->where('user_id', auth()->id())->first() : null;
     }
 
     protected $fillable = [

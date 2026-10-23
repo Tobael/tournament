@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Enums\Status;
 use App\Models\Group;
 use App\Models\Tournament;
-use App\Models\TournamentUser;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -38,8 +37,6 @@ class Tournaments extends Component
     {
         $this->resetPage();
     }
-
-    public ?string $deckname = null;
 
     public string $sortDirection = 'desc';
 
@@ -120,26 +117,6 @@ class Tournaments extends Component
         $this->modal('edit-tournament')->close();
     }
 
-    public function participateTournament(): void
-    {
-        $this->validate(['deckname' => 'nullable|string|max:255']);
-        if ($this->selectedTournament->status !== Status::OPEN) {
-            return;
-        }
-
-        TournamentUser::firstOrCreate(
-            [
-                'user_id' => auth()->id(),
-                'tournament_id' => $this->selectedTournament->id,
-            ],
-            [
-                'deckname' => $this->deckname,
-            ]
-        );
-
-        $this->modal('participate-tournament')->close();
-    }
-
     #[Computed]
     public function tournaments()
     {
@@ -151,13 +128,6 @@ class Tournaments extends Component
             ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
             ->when($this->status !== '', fn ($query) => $query->where('status', $this->status))
             ->with('group')->withCount('users')->withExists(['users as joined' => fn ($query) => $query->where('user_id', auth()->id())])->tap(fn ($query) => $this->sortBy ? $query->orderBy($this->sortBy, $this->sortDirection) : $query)->paginate(10);
-    }
-
-    public function openParticipateModal(Tournament $tournament): void
-    {
-        $this->selectedTournament = $tournament;
-        $this->reset('deckname');
-        $this->modal('participate-tournament')->show();
     }
 
     public function openEditModal(Tournament $tournament): void

@@ -4,6 +4,7 @@
         <h1>Deine Runde.<br>Dein nächstes Match.</h1>
         <p class="muted">Paarungen, Ergebnisse und Tabelle – alles auf deinem Handy.</p>
     </section>
+    <section class="saved-events" data-device-home data-auto-return="{{ request()->boolean('home') ? '0' : '1' }}" hidden><h2>Deine letzten Spielrunden</h2><p class="muted">Auf diesem Gerät gespeichert. Deine Teilnahme wird beim Öffnen automatisch wiederhergestellt.</p><div class="card-actions" data-saved-events></div></section>
     <div class="welcome-grid">
         <section class="join-card">
             <span class="step-number" aria-hidden="true">01</span><h2>Ohne Anmeldung mitspielen.</h2>

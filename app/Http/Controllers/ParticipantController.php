@@ -27,9 +27,8 @@ class ParticipantController extends Controller
 
     public function join(Request $request, Tournament $tournament)
     {
-        abort_if(auth()->check(), 403);
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
+            'name' => auth()->check() ? ['nullable'] : ['required', 'string', 'max:80'],
             'deckname' => ['nullable', 'string', 'max:255'],
         ]);
         $token = Str::random(64);
@@ -39,11 +38,12 @@ class ParticipantController extends Controller
             if ($existing = $tournament->participant()) {
                 return $existing;
             }
-            if ($tournament->participants()->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($data['name']))])->exists()) {
+            $name = auth()->user()?->name ?? trim($data['name']);
+            if ($tournament->participants()->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->exists()) {
                 throw ValidationException::withMessages(['name' => 'Dieser Name ist schon dabei. Nutze deinen Rückkehr-Link oder ergänze deinen Namen.']);
             }
-            $user = User::create([
-                'name' => trim($data['name']),
+            $user = auth()->user() ?? User::create([
+                'name' => $name,
                 'email' => Str::uuid().'@participant.invalid',
                 'password' => Str::random(64),
                 'is_admin' => false,
@@ -53,8 +53,7 @@ class ParticipantController extends Controller
 
             return $participant;
         });
-        if (session('participants.'.$tournament->id.'.id') !== $participant->id
-            || ! hash_equals($participant->recovery_hash, hash('sha256', session('participants.'.$tournament->id.'.token', '')))) {
+        if (hash_equals((string) $participant->recovery_hash, hash('sha256', $token))) {
             $request->session()->regenerate();
             session(['participants.'.$tournament->id => ['id' => $participant->id, 'token' => $token]]);
         }
@@ -66,18 +65,24 @@ class ParticipantController extends Controller
     {
         abort_unless(auth()->user()?->is_admin, 403);
         abort_unless($participant->tournament_id === $tournament->id, 404);
+        $isCurrentParticipant = $tournament->participant()?->id === $participant->id;
         $token = Str::random(64);
         $participant->forceFill(['recovery_hash' => hash('sha256', $token)])->save();
 
-        return redirect()->route('tournament', $tournament)->with('replacement_link', [
+        if ($isCurrentParticipant) {
+            session(['participants.'.$tournament->id => ['id' => $participant->id, 'token' => $token]]);
+        }
+
+        session(['replacement_links.'.$tournament->id => [
             'name' => $participant->user->name,
             'url' => route('play.return').'#'.$token,
-        ]);
+        ]]);
+
+        return redirect()->route('tournament', $tournament);
     }
 
     public function recover(Request $request)
     {
-        abort_if(auth()->check(), 403);
         $data = $request->validate(['token' => ['required', 'string', 'size:64']]);
         $participant = TournamentUser::where('recovery_hash', hash('sha256', $data['token']))->first();
         if (! $participant) {
@@ -86,6 +91,8 @@ class ParticipantController extends Controller
         $request->session()->regenerate();
         session(['participants.'.$participant->tournament_id => ['id' => $participant->id, 'token' => $data['token']]]);
 
-        return redirect()->route('play', $participant->tournament->invite_token);
+        $url = route('play', $participant->tournament->invite_token);
+
+        return $request->expectsJson() ? response()->json(['url' => $url]) : redirect($url);
     }
 }

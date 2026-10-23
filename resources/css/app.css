@@ -112,3 +112,5 @@ summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: 14px; f
 .welcome-side h2 { margin-bottom: 10px; }.welcome-organizer { padding: 0 24px; }
 .step-number { display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid #b5c5ad; border-radius: 12px; margin-bottom: 24px; font-size: 16px; }
 @media (max-width: 640px) { .welcome-grid { grid-template-columns: minmax(0, 1fr); }.welcome-intro { padding: 16px 0 30px; } }
+.saved-events { margin-bottom: 32px; }.saved-events h2 { margin-bottom: 8px; }
+.share-link input { -webkit-user-select: text; user-select: text; }

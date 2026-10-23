@@ -4,9 +4,16 @@
     $participant = $tournament->participant();
     $currentRound = $tournament->currentRound();
     $myMatch = $currentRound?->getMatchForUser();
+    $deviceToken = session('participants.'.$tournament->id.'.token', '');
+    if (!$participant || !hash_equals((string) $participant->recovery_hash, hash('sha256', $deviceToken))) {
+        $deviceToken = '';
+    }
     $isOrganizer = auth()->user()?->is_admin;
 @endphp
 <div @if($tournament->status !== Status::CLOSED) wire:poll.10s="refresh" @endif>
+    <div data-device-participant data-invite="{{ $tournament->invite_token }}" data-title="{{ $tournament->name }}" data-name="{{ $participant?->user->name }}" data-token="{{ $deviceToken }}" data-participating="{{ $participant ? '1' : '0' }}" data-active="{{ $tournament->status !== Status::CLOSED ? '1' : '0' }}">
+        <p class="muted" data-device-message role="status"></p>
+    </div>
     <section class="page-intro">
         <p class="eyebrow">{{ $tournament->group->name }} · {{ $tournament->users->count() }} TEILNEHMENDE</p>
         <h1>{{ $tournament->name }}</h1>
@@ -15,58 +22,30 @@
 
     <nav class="event-navigation" aria-label="Im Turnier">
         @if($participant)<a href="#my-match">Mein Spiel</a>@endif
-        <a href="#standings">Tabelle</a>
-        @if($currentRound)<a href="#rounds">Runden</a>@endif
-        @if($isOrganizer)<a href="#organization">Organisation</a>@endif
-    </nav>
-    @if($isOrganizer)
-        <section id="organization" class="event-card organizer-panel">
-            <h2>Organisation</h2>
-            @if(session('replacement_link'))
-                <div class="notice" role="status">Neuer privater Link für {{ session('replacement_link.name') }}. Nur an diese Person weitergeben. Der bisherige Link und bestehende Gerätezugriffe sind ungültig.
-                    <x-share-link :url="session('replacement_link.url')" label="Neuer privater Rückkehr-Link" />
-                </div>
-            @endif
-            <details><summary>Verlorenen Rückkehr-Link ersetzen</summary>
-                @foreach($tournament->users as $person)
-                    <form method="POST" action="{{ route('participant.recovery', [$tournament, $person]) }}" class="recovery-action" onsubmit="return confirm('Privaten Link für diese Person ersetzen? Bisherige Gerätezugriffe werden beendet.')">
-                        @csrf <span>{{ $person->user->name }}</span><flux:button type="submit">Neuer Link</flux:button>
-                    </form>
-                @endforeach
-            </details>
-            <p class="muted">Diesen Link mit den Teilnehmenden teilen</p>
-            <x-share-link :url="route('play', $tournament->invite_token)" label="Event-Link" share />
-            <div class="card-actions">
-                @if($tournament->status === Status::OPEN && $tournament->users->count() >= 2)
-                    <flux:button variant="primary" wire:click="startNextRound" wire:loading.attr="disabled">Erste Runde starten</flux:button>
-                @elseif($tournament->status === Status::OPEN)
-                    <p class="muted">Zum Start werden mindestens zwei Teilnehmende benötigt.</p>
-                @elseif($tournament->status === Status::IN_PROGRESS)
-                    @if($currentRound?->isCompleted() && !$tournament->allMatchesGenerated() && !$hideNextRoundButton)
-                        <flux:button variant="primary" wire:click="startNextRound" wire:loading.attr="disabled">Nächste Runde starten</flux:button>
-                    @endif
-                    <flux:button wire:click="openFinishModal">Turnier beenden</flux:button>
-                @endif
-            </div>
-        </section>
-    @endif
-
-    @guest
-        @if(!$participant && $tournament->status === Status::OPEN)
-            <section class="join-card">
-                <p class="eyebrow">DU BIST DRAN</p><h2>Mitspielen. Ohne Passwort.</h2><p class="muted">Dein Name am Tisch reicht. Danach bekommst du einen privaten Rückkehr-Link.</p>
-                <form method="POST" action="{{ route('play.join', $tournament->invite_token) }}" class="join-form">
-                    @csrf
+    @if(!$participant && $tournament->status === Status::OPEN)<a href="#join">Mitspielen</a>@endif
+    <a href="#standings">Tabelle</a>
+    @if($currentRound)<a href="#rounds">Runden</a>@endif
+    @if($isOrganizer)<a href="#organization">Organisation</a>@endif
+</nav>
+    @if(!$participant && $tournament->status === Status::OPEN)
+        <section id="join" class="join-card">
+            <p class="eyebrow">DU BIST DRAN</p><h2>{{ $isOrganizer ? 'Organisieren und mitspielen.' : 'Mitspielen. Ohne Passwort.' }}</h2>
+            <p class="muted">{{ auth()->check() ? 'Du spielst mit deinem Konto mit. Die Organisationsfunktionen bleiben verfügbar.' : 'Dein Name am Tisch reicht. Danach bekommst du einen privaten Rückkehr-Link.' }}</p>
+            <form method="POST" action="{{ route('play.join', $tournament->invite_token) }}" class="join-form">
+                @csrf
+                @auth
+                    <p>Du spielst als <strong>{{ auth()->user()->name }}</strong>. <a class="text-link" href="{{ route('profile.edit') }}">Namen ändern</a></p>
+                @else
                     <flux:input name="name" label="Dein Anzeigename" :value="old('name')" required maxlength="80" autocomplete="nickname" placeholder="So nennen dich die anderen" />
-                    <flux:input name="deckname" label="Deck (optional)" :value="old('deckname')" maxlength="255" placeholder="Was spielst du heute?" />
-                    <flux:button type="submit" variant="primary">Ich bin dabei ↗</flux:button>
-                </form>
-                <a class="text-link" href="{{ route('play.return') }}">Schon angemeldet? Mit Rückkehr-Link fortsetzen</a>
-            </section>
-        @elseif(!$participant)
-            <p class="notice">Die Anmeldung ist geschlossen. Du kannst die Spiele und Tabelle hier verfolgen.</p>
-        @endif
-    @endguest
+                @endauth
+                <flux:input name="deckname" label="Deck (optional)" :value="old('deckname')" maxlength="255" placeholder="Was spielst du heute?" />
+                <flux:button type="submit" variant="primary">Ich bin dabei ↗</flux:button>
+            </form>
+            <a class="text-link" href="{{ route('play.return') }}">Schon angemeldet? Mit Rückkehr-Link fortsetzen</a>
+        </section>
+    @elseif(!$participant)
+        <p class="notice">Die Anmeldung ist geschlossen. Du kannst die Spiele und Tabelle hier verfolgen.</p>
+    @endif
 
     @if($participant)
         <section id="my-match" class="my-match">
@@ -103,11 +82,41 @@
                 <h2>Danke fürs Mitspielen.</h2>
             @endif
         </section>
-        @guest
-            @if(session('participants.'.$tournament->id.'.token'))
-                <details class="recovery-panel" wire:ignore><summary>Deinen privaten Rückkehr-Link sichern</summary><p class="muted">Speichere diesen Link als Lesezeichen. Wer ihn hat, kann unter deinem Namen Ergebnisse melden. Teile ihn nicht mit der Runde.</p><x-share-link :url="route('play.return').'#'.session('participants.'.$tournament->id.'.token')" label="Privater Rückkehr-Link" /></details>
+        @if($deviceToken)
+            <details class="recovery-panel" wire:ignore><summary>Deinen privaten Rückkehr-Link sichern</summary><p class="muted">Speichere diesen Link als Lesezeichen. Wer ihn hat, kann unter deinem Namen Ergebnisse melden. Teile ihn nicht mit der Runde.</p><x-share-link :url="route('play.return').'#'.$deviceToken" label="Privater Rückkehr-Link" /></details>
+        @endif
+    @endif
+
+    @if($isOrganizer)
+        <section id="organization" class="event-card organizer-panel">
+            <h2>Organisation</h2>
+            @if(session('replacement_links.'.$tournament->id))
+                <div class="notice" role="status">Neuer privater Link für {{ session('replacement_links.'.$tournament->id.'.name') }}. Nur an diese Person weitergeben. Der bisherige Link und bestehende Gerätezugriffe sind ungültig.
+                    <x-share-link :url="session('replacement_links.'.$tournament->id.'.url')" label="Neuer privater Rückkehr-Link" />
+                </div>
             @endif
-        @endguest
+            <details><summary>Verlorenen Rückkehr-Link ersetzen</summary>
+                @foreach($tournament->users as $person)
+                    <form method="POST" action="{{ route('participant.recovery', [$tournament, $person]) }}" class="recovery-action" onsubmit="return confirm('Privaten Link für diese Person ersetzen? Bisherige Gerätezugriffe werden beendet.')">
+                        @csrf <span>{{ $person->user->name }}</span><flux:button type="submit">Neuer Link</flux:button>
+                    </form>
+                @endforeach
+            </details>
+            <p class="muted">Diesen Link mit den Teilnehmenden teilen</p>
+            <x-share-link :url="route('play', $tournament->invite_token)" label="Event-Link" share />
+            <div class="card-actions">
+                @if($tournament->status === Status::OPEN && $tournament->users->count() >= 2)
+                    <flux:button variant="primary" wire:click="startNextRound" wire:loading.attr="disabled">Erste Runde starten</flux:button>
+                @elseif($tournament->status === Status::OPEN)
+                    <p class="muted">Zum Start werden mindestens zwei Teilnehmende benötigt.</p>
+                @elseif($tournament->status === Status::IN_PROGRESS)
+                    @if($currentRound?->isCompleted() && !$tournament->allMatchesGenerated() && !$hideNextRoundButton)
+                        <flux:button variant="primary" wire:click="startNextRound" wire:loading.attr="disabled">Nächste Runde starten</flux:button>
+                    @endif
+                    <flux:button wire:click="openFinishModal">Turnier beenden</flux:button>
+                @endif
+            </div>
+        </section>
     @endif
 
     <section id="standings" class="results-section">

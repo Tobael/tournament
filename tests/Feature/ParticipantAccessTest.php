@@ -104,7 +104,7 @@ test('organizers can replace lost links and revoke the previous identity', funct
     $participant = $event->users()->first();
     $this->actingAs(User::factory()->create())->post(route('participant.recovery', [$event, $participant]))->assertForbidden();
     $this->actingAs(User::factory()->admin()->create())->post(route('participant.recovery', [$event, $participant]))->assertRedirect();
-    $newLink = session('replacement_link.url');
+    $newLink = session('replacement_links.'.$event->id.'.url');
     auth()->logout();
     $this->withSession(['participants.'.$event->id => $identity]);
     expect($event->participant())->toBeNull();
@@ -175,4 +175,71 @@ test('the landing page opens an invitation without accepting arbitrary redirects
     $this->get(route('play.open', ['invite' => route('play', $event->invite_token)]))->assertRedirect(route('play', $event->invite_token));
     $this->get(route('play.open', ['invite' => $event->invite_token]))->assertRedirect(route('play', $event->invite_token));
     $this->get(route('play.open', ['invite' => 'https://example.com/elsewhere']))->assertSessionHasErrors('invite');
+});
+
+test('an organizer can join, manage and play the same tournament without changing accounts', function () {
+    $event = eventForParticipants();
+    $organizer = User::factory()->admin()->create(['name' => 'Alex']);
+    $opponent = User::factory()->create(['name' => 'Sam']);
+    $event->users()->create(['user_id' => $opponent->id]);
+    $this->actingAs($organizer)->get(route('tournament', $event))->assertOk()->assertSee('Organisieren und mitspielen.');
+    $this->post(route('play.join', $event->invite_token), ['deckname' => 'Goblins'])->assertRedirect();
+    expect(User::count())->toBe(2);
+    expect($event->participant()->user_id)->toBe($organizer->id);
+    $token = session('participants.'.$event->id.'.token');
+    $this->post(route('play.join', $event->invite_token))->assertRedirect();
+    expect(session('participants.'.$event->id.'.token'))->toBe($token);
+    expect($event->users()->count())->toBe(2);
+    $this->get(route('tournament', $event))->assertOk()->assertSee('Mein Spiel')->assertSee('Organisation');
+    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startNextRound')->assertOk();
+    $match = $event->fresh()->currentRound()->matches()->first();
+    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('updateCurrentMatchForUser', RoundMatchResult::TWOONE->value)->assertOk();
+    expect($match->refresh()->result)->toBe(RoundMatchResult::TWOONE);
+    $this->assertAuthenticatedAs($organizer);
+});
+
+test('an existing guest participation survives organizer login and recovery', function () {
+    $event = eventForParticipants();
+    $this->post(route('play.join', $event->invite_token), ['name' => 'Player Alex']);
+    $identity = session('participants.'.$event->id);
+    $organizer = User::factory()->admin()->create();
+    $this->actingAs($organizer);
+    expect($event->participant()->id)->toBe($identity['id']);
+    $this->post(route('play.join', $event->invite_token))->assertRedirect();
+    expect($event->users()->count())->toBe(1);
+    session()->forget('participants');
+    $this->postJson(route('play.recover'), ['token' => $identity['token']])->assertOk()->assertJson(['url' => route('play', $event->invite_token)]);
+    expect($event->participant()->id)->toBe($identity['id']);
+    $this->assertAuthenticatedAs($organizer);
+    $this->get(route('play', $event->invite_token))->assertOk()->assertSee('Player Alex')->assertSee('Organisation');
+});
+
+test('recovering an organizer participation does not grant organizer permissions', function () {
+    $event = eventForParticipants();
+    $organizer = User::factory()->admin()->create();
+    $this->actingAs($organizer)->post(route('play.join', $event->invite_token))->assertRedirect();
+    $token = session('participants.'.$event->id.'.token');
+    auth()->logout();
+    session()->flush();
+    $this->postJson(route('play.recover'), ['token' => $token])->assertOk();
+    $this->assertGuest();
+    expect($event->participant()->user_id)->toBe($organizer->id);
+    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startNextRound')->assertForbidden();
+});
+
+test('automatic device recovery rejects expired tokens with a JSON validation error', function () {
+    $this->postJson(route('play.recover'), ['token' => str_repeat('x', 64)])->assertUnprocessable()->assertJsonValidationErrors('token');
+    $this->assertGuest();
+});
+
+test('replacement links remain visible across polling and are scoped to their tournament', function () {
+    $event = eventForParticipants();
+    $participant = $event->users()->create(['user_id' => User::factory()->create()->id]);
+    $this->actingAs(User::factory()->admin()->create());
+    $this->post(route('participant.recovery', [$event, $participant]))->assertRedirect();
+    $link = session('replacement_links.'.$event->id.'.url');
+    $this->get(route('tournament', $event))->assertOk()->assertSee($link);
+    $this->get(route('tournament', $event))->assertOk()->assertSee($link);
+    $other = Tournament::create(['name' => 'Other event', 'status' => Status::OPEN, 'group_id' => $event->group_id]);
+    $this->get(route('tournament', $other))->assertOk()->assertDontSee($link);
 });

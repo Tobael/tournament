@@ -51,6 +51,9 @@ jobs:
       - name: Build Assets
         run: npm run build
 
+      - name: Test browser helpers
+        run: npm test
+
       - name: Run Tests
         run: ./vendor/bin/pest
       - name: Set up Docker BuildKit

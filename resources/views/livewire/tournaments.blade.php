@@ -20,7 +20,7 @@
                 <div class="card-actions">
                     <a class="arena-button" href="{{ route('tournament', $tournament) }}" wire:navigate>Turnier öffnen <span aria-hidden="true">↗</span></a>
                     @if($tournament->status === App\Enums\Status::OPEN && !$tournament->joined)
-                        <flux:button wire:click="openParticipateModal({{ $tournament->id }})">Mitspielen</flux:button>
+                        <a class="utility-button" href="{{ route('tournament', $tournament) }}#join" wire:navigate>Mitspielen</a>
                     @endif
                 </div>
                 @if(auth()->user()->is_admin)
@@ -33,32 +33,6 @@
     </div>
     <div class="pagination">{{ $this->tournaments->links() }}</div>
     <!-- Modals -->
-    <flux:modal name="participate-tournament">
-        @if($selectedTournament)
-            <flux:heading size="lg">
-                An Turnier teilnehmen
-            </flux:heading>
-
-            <p>
-                Möchtest du dem Turnier
-                <strong>"{{ $selectedTournament->name }}"</strong>
-                beitreten?
-            </p>
-
-            <form wire:submit="participateTournament" class="space-y-6">
-                <flux:input wire:model="deckname" label="Deck Name"/>
-
-                <div class="flex justify-end gap-3">
-                    <flux:modal.close>
-                        <flux:button variant="ghost">Abbrechen</flux:button>
-                    </flux:modal.close>
-
-                    <flux:button type="submit" variant="primary" color="green">Ja</flux:button>
-                </div>
-            </form>
-        @endif
-    </flux:modal>
-
     <flux:modal name="edit-tournament">
         @if($selectedTournament)
             <flux:heading size="lg">
