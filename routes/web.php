@@ -1,24 +1,30 @@
 <?php
 
-use App\Livewire\Settings\Appearance;
+use App\Http\Controllers\ParticipantController;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
-use App\Livewire\Tournaments;
 use App\Livewire\Tournament;
+use App\Livewire\Tournaments;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-Route::redirect('/', '/tournaments')->name('home');
+Route::view('/', 'welcome')->name('home');
+Route::get('/join', [ParticipantController::class, 'open'])->middleware('throttle:30,1')->name('play.open');
+
+Route::get('/play/{tournament:invite_token}', Tournament::class)->name('play');
+Route::post('/play/{tournament:invite_token}/join', [ParticipantController::class, 'join'])->middleware('throttle:10,1')->name('play.join');
+Route::view('/return', 'participant-return')->name('play.return');
+Route::post('/return', [ParticipantController::class, 'recover'])->middleware('throttle:10,1')->name('play.recover');
 
 Route::middleware(['auth'])->group(function () {
+    Route::post('tournament/{tournament}/participants/{participant}/recovery', [ParticipantController::class, 'replaceRecovery'])->name('participant.recovery');
     Route::get('tournament/{tournament}', Tournament::class)->name('tournament');
     Route::get('/tournaments', Tournaments::class)->name('tournaments');
 
     Route::redirect('settings', 'settings/profile');
     Route::get('settings/profile', Profile::class)->name('profile.edit');
     Route::get('settings/password', Password::class)->name('user-password.edit');
-    Route::get('settings/appearance', Appearance::class)->name('appearance.edit');
 
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(

@@ -1,42 +1,69 @@
-name: deploy
+name: Deploy tournament
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tournament-production
+  cancel-in-progress: false
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DEPLOY_HOST: ${{ secrets.SSH_HOST }}
+      DEPLOY_USER: ${{ secrets.SSH_USER }}
     steps:
-      - run: sudo apt install wireguard
-      - run: echo "${{ secrets.WIREGUARD_CONF }}" > wireguard.conf
-      - run: sudo ln -s /usr/bin/resolvectl /usr/local/bin/resolvconf
-      - run: sudo wg-quick up ./wireguard.conf
-      - run: sudo wg show
-
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.DEPLOY_SECRET_KEY }}
-          name: id_rsa # optional
-          known_hosts: ${{ secrets.SSH_HOST }}
-          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-      - name: Adding Known Hosts
-        run: ssh-keyscan -T 20 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-      - name: Checkout project
-        uses: actions/checkout@v4
-      - name: Deploy with rsync
-        run: rsync -avz ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/mtg/
-      - name: executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.DEPLOY_SECRET_KEY }}
-          port: 22
-          script: |
-            cd mtg
-            echo "${{ secrets.ENV_FILE }}" > .env
-            echo "FLUX_USERNAME=${{secrets.FLUX_USERNAME}}" >> .env
-            echo "FLUX_LICENSE_KEY=${{secrets.FLUX_LICENSE_KEY}}" >> .env
-            docker compose up -d --build --remove-orphans
-            docker exec -t magic_tournament php artisan migrate --force
+      - uses: actions/checkout@v4
+      - name: Connect WireGuard
+        env:
+          WIREGUARD_CONF: ${{ secrets.WIREGUARD_CONF }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y wireguard-tools
+          sudo ln -sf "$(command -v resolvectl)" /usr/local/bin/resolvconf
+          umask 077
+          printf '%s' "$WIREGUARD_CONF" > "$RUNNER_TEMP/wg0.conf"
+          sudo wg-quick up "$RUNNER_TEMP/wg0.conf"
+      - name: Configure SSH with trusted host keys
+        env:
+          DEPLOY_SECRET_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          umask 077
+          printf '%s\n' "$DEPLOY_SECRET_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+      - name: Synchronize source, preserving runtime state
+        run: |
+          set -euo pipefail
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" 'mkdir -p ~/mtg/data ~/mtg/backups'
+          rsync -az --delete --delete-delay \
+            --exclude='/.env*' --exclude='/auth.json' --exclude='/secrets/' \
+            --exclude='/data/' --exclude='/backups/' --exclude='/storage/' \
+            --exclude='/database/*.sqlite*' --exclude='/vendor/' --exclude='/node_modules/' \
+            --exclude='/public/build/' --exclude='/public/hot' \
+            --exclude='/.git/' --exclude='/.agents/' --exclude='/.aws/' --exclude='/.codex/' \
+            ./ "$DEPLOY_USER@$DEPLOY_HOST:mtg/"
+      - name: Stage private configuration
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$ENV_FILE"
+          printf '%s\n' "$ENV_FILE" | ssh "$DEPLOY_USER@$DEPLOY_HOST" 'cd ~/mtg && umask 077 && cat > .env.new && mv .env.new .env'
+      - name: Build, back up, migrate and verify
+        run: |
+          set -euo pipefail
+          ssh -n "$DEPLOY_USER@$DEPLOY_HOST" 'bash ~/mtg/deploy/remote.sh'
+      - name: Disconnect WireGuard
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/wg0.conf" ]; then
+            sudo wg-quick down "$RUNNER_TEMP/wg0.conf" || true
+          fi

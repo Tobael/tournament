@@ -1,6 +1,6 @@
 <x-layouts.auth>
     <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Einloggen')" :description="__('Gib deine Email und dein Passwort ein um dich einzuloggen')" />
+        <x-auth-header :title="__('Organisation anmelden')" :description="__('Du spielst mit? Öffne den Event-Link deiner Runde. Nur die Organisation braucht ein Konto.')" />
 
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />

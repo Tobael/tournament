@@ -1,201 +1,131 @@
 @php
     use App\Enums\Status;
     use App\Enums\RoundMatchResult;
+    $participant = $tournament->participant();
+    $currentRound = $tournament->currentRound();
+    $myMatch = $currentRound?->getMatchForUser();
+    $isOrganizer = auth()->user()?->is_admin;
 @endphp
-<div>
-    <flux:heading size="xl" class="mb-8">{{$tournament->name}}</flux:heading>
+<div @if($tournament->status !== Status::CLOSED) wire:poll.10s="refresh" @endif>
+    <section class="page-intro">
+        <p class="eyebrow">{{ $tournament->group->name }} · {{ $tournament->users->count() }} TEILNEHMENDE</p>
+        <h1>{{ $tournament->name }}</h1>
+        <p class="muted">{{ match($tournament->status) { Status::OPEN => 'Die Anmeldung läuft. Mach es dir am Tisch gemütlich.', Status::IN_PROGRESS => 'Gute Spiele! Hier findest du dein Match und alle Ergebnisse.', Status::CLOSED => 'Alle Spiele sind gespielt. Danke fürs Mitmachen!' } }}</p>
+    </section>
 
-    @if($tournament->status === Status::OPEN)
-        <flux:button wire:click="startNextRound">Turnier starten</flux:button>
-        <flux:table>
-            <flux:table.columns>
-                <flux:table.column>Name</flux:table.column>
-                <flux:table.column>Deck Name</flux:table.column>
-            </flux:table.columns>
-            <flux:table.rows>
-                @foreach($tournament->users as $tournamentUser)
-                    <flux:table.row :key="$tournamentUser->id">
-                        <flux:table.cell>{{ $tournamentUser->user->name }}</flux:table.cell>
-                        <flux:table.cell>{{ $tournamentUser->deckname }}</flux:table.cell>
-                    </flux:table.row>
-                @endforeach
-            </flux:table.rows>
-        </flux:table>
-    @elseif($tournament->status === Status::IN_PROGRESS)
-        <flux:modal name="finish-tournament">
-            <flux:heading size="lg">Turnier beenden</flux:heading>
-
-            <div class="mb-5">
-                Möchtest du das Turnier
-                <strong>"{{ $tournament->name }}"</strong>
-                wirklich beenden?
-            </div>
-            @if(!$tournament->currentRound()->isCompleted())
-                <div class="mb-5">
-                    <strong>Die aktuelle Turnierrunde ist noch nicht ausgespielt!</strong>
+    <nav class="event-navigation" aria-label="Im Turnier">
+        @if($participant)<a href="#my-match">Mein Spiel</a>@endif
+        <a href="#standings">Tabelle</a>
+        @if($currentRound)<a href="#rounds">Runden</a>@endif
+        @if($isOrganizer)<a href="#organization">Organisation</a>@endif
+    </nav>
+    @if($isOrganizer)
+        <section id="organization" class="event-card organizer-panel">
+            <h2>Organisation</h2>
+            @if(session('replacement_link'))
+                <div class="notice" role="status">Neuer privater Link für {{ session('replacement_link.name') }}. Nur an diese Person weitergeben. Der bisherige Link und bestehende Gerätezugriffe sind ungültig.
+                    <x-share-link :url="session('replacement_link.url')" label="Neuer privater Rückkehr-Link" />
                 </div>
             @endif
-
-            <div class="flex justify-end gap-3">
-                <flux:modal.close>
-                    <flux:button variant="ghost">Abbrechen</flux:button>
-                </flux:modal.close>
-
-                <flux:button variant="danger" wire:click="finishTournament">
-                    Ja
-                </flux:button>
-            </div>
-        </flux:modal>
-
-        <flux:modal name="no-more-matches">
-            <flux:heading size="lg">Swiss Algorithmus</flux:heading>
-
-            <div class="mb-5">
-                Der Algorithmus konnte keine validen Matches finden für alle Teilnehmer.
-            </div>
-
-            <div class="flex justify-end gap-3">
-                <flux:modal.close>
-                    <flux:button variant="primary">OK</flux:button>
-                </flux:modal.close>
-            </div>
-        </flux:modal>
-
-        <flux:button.group>
-            <flux:button :variant="$tournament->currentRound()->isCompleted() ? 'primary' : 'danger'"
-                         wire:click="openFinishModal">Turnier beenden
-            </flux:button>
-            @if ($tournament->currentRound()->isCompleted() && !$tournament->allMatchesGenerated() && !$hideNextRoundButton)
-                <flux:button wire:click="startNextRound">Nächste Runde starten</flux:button>
-            @endif
-        </flux:button.group>
-
-        <flux:tab.group class="pt-4">
-            <flux:tabs wire:model="tab" scrollable scrollable:fade>
-                @foreach($tournament->rounds as $round)
-                    <flux:tab :name="$round->id">Runde {{ $round->round }}</flux:tab>
+            <details><summary>Verlorenen Rückkehr-Link ersetzen</summary>
+                @foreach($tournament->users as $person)
+                    <form method="POST" action="{{ route('participant.recovery', [$tournament, $person]) }}" class="recovery-action" onsubmit="return confirm('Privaten Link für diese Person ersetzen? Bisherige Gerätezugriffe werden beendet.')">
+                        @csrf <span>{{ $person->user->name }}</span><flux:button type="submit">Neuer Link</flux:button>
+                    </form>
                 @endforeach
-                <flux:tab name="standings" icon="table">Tabelle</flux:tab>
-            </flux:tabs>
-
-            @foreach($tournament->rounds as $round)
-                <flux:tab.panel :name="$round->id">
-                    <flux:table>
-                        <flux:table.columns>
-                            <flux:table.column>Player A</flux:table.column>
-                            <flux:table.column>Result</flux:table.column>
-                            <flux:table.column>Player B</flux:table.column>
-                        </flux:table.columns>
-                        <flux:table.rows>
-                            @foreach($round->matches as $match)
-                                <flux:table.row :key="$match->id">
-                                    <flux:table.cell>{{ $match->playerA->user->name }}</flux:table.cell>
-                                    <flux:table.cell>{{ $match->result }}</flux:table.cell>
-                                    <flux:table.cell>{{ $match->playerB->user->name ?? 'BYE' }}</flux:table.cell>
-                                </flux:table.row>
-                            @endforeach
-                        </flux:table.rows>
-                    </flux:table>
-
-                    @if($loop->last && $round->getMatchForUser() && !$round->getMatchForUser()->result)
-                        <flux:card class="flex flex-col gap-4 align-items-center">
-                            <flux:heading size="lg">{{ $round->getMatchForUser()->playerA->user->name }}
-                                - {{ $round->getMatchForUser()->playerB->user->name }}</flux:heading>
-
-                            <flux:button.group class="w-full">
-                                <flux:button class="w-full"
-                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOZERO }}')">{{ RoundMatchResult::TWOZERO }}</flux:button>
-                                <flux:button class="w-full"
-                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ZEROTWO }}')">{{ RoundMatchResult::ZEROTWO }}</flux:button>
-                            </flux:button.group>
-                            <flux:button.group>
-                                <flux:button class="w-full"
-                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::TWOONE }}')">{{ RoundMatchResult::TWOONE }}</flux:button>
-                                <flux:button class="w-full"
-                                            wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::ONETWO }}')">{{ RoundMatchResult::ONETWO }}</flux:button>
-                            </flux:button.group>
-                            <flux:button
-                                wire:click="updateCurrentMatchForUser('{{ RoundMatchResult::DRAW }}')">{{ RoundMatchResult::DRAW }}</flux:button>
-                        </flux:card>
+            </details>
+            <p class="muted">Diesen Link mit den Teilnehmenden teilen</p>
+            <x-share-link :url="route('play', $tournament->invite_token)" label="Event-Link" share />
+            <div class="card-actions">
+                @if($tournament->status === Status::OPEN && $tournament->users->count() >= 2)
+                    <flux:button variant="primary" wire:click="startNextRound" wire:loading.attr="disabled">Erste Runde starten</flux:button>
+                @elseif($tournament->status === Status::OPEN)
+                    <p class="muted">Zum Start werden mindestens zwei Teilnehmende benötigt.</p>
+                @elseif($tournament->status === Status::IN_PROGRESS)
+                    @if($currentRound?->isCompleted() && !$tournament->allMatchesGenerated() && !$hideNextRoundButton)
+                        <flux:button variant="primary" wire:click="startNextRound" wire:loading.attr="disabled">Nächste Runde starten</flux:button>
                     @endif
-                </flux:tab.panel>
-            @endforeach
-
-            <flux:tab.panel name="standings">
-                <flux:table>
-                    <flux:table.columns>
-                        <flux:table.column>Platz</flux:table.column>
-                        <flux:table.column>Name</flux:table.column>
-                        <flux:table.column>Deck</flux:table.column>
-                        <flux:table.column>Spiele</flux:table.column>
-                        <flux:table.column>Punkte</flux:table.column>
-                    </flux:table.columns>
-                    <flux:table.rows>
-                        @foreach($tournament->standings() as $user)
-                            <flux:table.row :key="$user['id']">
-                                <flux:table.cell>{{ isset($user['place']) ? "{$user['place']}." : '' }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['name'] }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['deck'] }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['games'] }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['points'] }}</flux:table.cell>
-                            </flux:table.row>
-                        @endforeach
-                    </flux:table.rows>
-                </flux:table>
-            </flux:tab.panel>
-        </flux:tab.group>
-    @elseif($tournament->status === Status::CLOSED)
-        <flux:tab.group class="pt-4">
-            <flux:tabs wire:model="tab" scrollable scrollable:fade>
-                @foreach($tournament->rounds as $round)
-                    <flux:tab :name="$round->id">Runde {{ $round->round }}</flux:tab>
-                @endforeach
-                <flux:tab name="standings" icon="table">Tabelle</flux:tab>
-            </flux:tabs>
-
-            @foreach($tournament->rounds as $round)
-                <flux:tab.panel :name="$round->id">
-                    <flux:table>
-                        <flux:table.columns>
-                            <flux:table.column>Player A</flux:table.column>
-                            <flux:table.column>Result</flux:table.column>
-                            <flux:table.column>Player B</flux:table.column>
-                        </flux:table.columns>
-                        <flux:table.rows>
-                            @foreach($round->matches as $match)
-                                <flux:table.row :key="$match->id">
-                                    <flux:table.cell>{{ $match->playerA->user->name }}</flux:table.cell>
-                                    <flux:table.cell>{{ $match->result }}</flux:table.cell>
-                                    <flux:table.cell>{{ $match->playerB->user->name ?? 'BYE' }}</flux:table.cell>
-                                </flux:table.row>
-                            @endforeach
-                        </flux:table.rows>
-                    </flux:table>
-                </flux:tab.panel>
-            @endforeach
-
-            <flux:tab.panel name="standings">
-                <flux:table>
-                    <flux:table.columns>
-                        <flux:table.column>Platz</flux:table.column>
-                        <flux:table.column>Name</flux:table.column>
-                        <flux:table.column>Deck</flux:table.column>
-                        <flux:table.column>Spiele</flux:table.column>
-                        <flux:table.column>Punkte</flux:table.column>
-                    </flux:table.columns>
-                    <flux:table.rows>
-                        @foreach($tournament->standings() as $user)
-                            <flux:table.row :key="$user['id']">
-                                <flux:table.cell>{{ isset($user['place']) ? "{$user['place']}." : '' }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['name'] }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['deck'] }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['games'] }}</flux:table.cell>
-                                <flux:table.cell>{{ $user['points'] }}</flux:table.cell>
-                            </flux:table.row>
-                        @endforeach
-                    </flux:table.rows>
-                </flux:table>
-            </flux:tab.panel>
-        </flux:tab.group>
+                    <flux:button wire:click="openFinishModal">Turnier beenden</flux:button>
+                @endif
+            </div>
+        </section>
     @endif
+
+    @guest
+        @if(!$participant && $tournament->status === Status::OPEN)
+            <section class="join-card">
+                <p class="eyebrow">DU BIST DRAN</p><h2>Mitspielen. Ohne Passwort.</h2><p class="muted">Dein Name am Tisch reicht. Danach bekommst du einen privaten Rückkehr-Link.</p>
+                <form method="POST" action="{{ route('play.join', $tournament->invite_token) }}" class="join-form">
+                    @csrf
+                    <flux:input name="name" label="Dein Anzeigename" :value="old('name')" required maxlength="80" autocomplete="nickname" placeholder="So nennen dich die anderen" />
+                    <flux:input name="deckname" label="Deck (optional)" :value="old('deckname')" maxlength="255" placeholder="Was spielst du heute?" />
+                    <flux:button type="submit" variant="primary">Ich bin dabei ↗</flux:button>
+                </form>
+                <a class="text-link" href="{{ route('play.return') }}">Schon angemeldet? Mit Rückkehr-Link fortsetzen</a>
+            </section>
+        @elseif(!$participant)
+            <p class="notice">Die Anmeldung ist geschlossen. Du kannst die Spiele und Tabelle hier verfolgen.</p>
+        @endif
+    @endguest
+
+    @if($participant)
+        <section id="my-match" class="my-match">
+            <p class="eyebrow">DEIN SPIEL · {{ $participant->user->name }}</p>
+            @if($myMatch)
+                @if(!$myMatch->player_b_id)
+                    <h2>Diese Runde hast du ein Freilos.</h2><p>2:0 für dich. Die nächste Runde erscheint automatisch hier.</p>
+                @else
+                    @php
+                        $isPlayerA = $myMatch->player_a_id === $participant->id;
+                        $opponent = $isPlayerA ? $myMatch->playerB->user->name : $myMatch->playerA->user->name;
+                    @endphp
+                    <h2>Du <span class="muted">gegen</span> {{ $opponent }}</h2>
+                    @if($myMatch->result)
+                        <p class="muted">Dein Ergebnis</p>
+                        <p class="recorded-score">{{ ($isPlayerA ? $myMatch->result : $myMatch->result->reversed())->label() }}</p>
+                        <p role="status">Ergebnis gespeichert. {{ $tournament->status === Status::CLOSED ? 'Das Turnier ist beendet.' : 'Die nächste Runde erscheint automatisch hier.' }}</p>
+                    @elseif($tournament->status === Status::IN_PROGRESS)
+                        <p>Wie ist dein Match ausgegangen? Wähle das Ergebnis aus deiner Sicht.</p>
+                        <div class="score-grid">
+                            @foreach(RoundMatchResult::cases() as $result)
+                                <button class="score-button" wire:click="updateCurrentMatchForUser('{{ ($isPlayerA ? $result : $result->reversed())->value }}')" wire:confirm="Dein Ergebnis {{ $result->label() }} gegen {{ $opponent }} speichern?" wire:loading.attr="disabled">
+                                    {{ $result->label() }}
+                                    @if($result !== RoundMatchResult::DRAW)<small>{{ in_array($result, [RoundMatchResult::TWOZERO, RoundMatchResult::TWOONE]) ? 'Dein Sieg' : 'Deine Niederlage' }}</small>@endif
+                                </button>
+                            @endforeach
+                        </div>
+                        <p class="score-help">Einmal bestätigen, dann ist es gespeichert. Es reicht, wenn eine Person das Ergebnis meldet.</p>
+                    @endif
+                @endif
+            @elseif($tournament->status === Status::OPEN)
+                <h2>Du bist dabei.</h2><p>Die Organisation startet gleich die erste Runde. Dein Match erscheint automatisch hier.</p>
+            @else
+                <h2>Danke fürs Mitspielen.</h2>
+            @endif
+        </section>
+        @guest
+            @if(session('participants.'.$tournament->id.'.token'))
+                <details class="recovery-panel" wire:ignore><summary>Deinen privaten Rückkehr-Link sichern</summary><p class="muted">Speichere diesen Link als Lesezeichen. Wer ihn hat, kann unter deinem Namen Ergebnisse melden. Teile ihn nicht mit der Runde.</p><x-share-link :url="route('play.return').'#'.session('participants.'.$tournament->id.'.token')" label="Privater Rückkehr-Link" /></details>
+            @endif
+        @endguest
+    @endif
+
+    <section id="standings" class="results-section">
+        <div class="section-heading"><h2>{{ $tournament->status === Status::CLOSED ? 'Endstand' : 'Tabelle' }}</h2><span class="muted">{{ $tournament->status === Status::CLOSED ? 'Turnier beendet' : 'Wird automatisch aktualisiert' }}</span></div>
+        <x-standings :tournament="$tournament" />
+    </section>
+    @if($currentRound)
+        <section id="rounds" class="results-section"><h2>Runden & Ergebnisse</h2>
+        @foreach($tournament->rounds->sortByDesc('round') as $round)
+            <details class="round-panel" wire:key="round-{{ $round->id }}" @if($round->id === $currentRound->id) open @endif>
+                <summary>Runde {{ $round->round }} <span class="muted">{{ $round->isCompleted() ? 'Abgeschlossen' : 'Läuft' }}</span></summary>
+                @foreach($round->matches as $match)
+                    <div class="match-row"><span>{{ $match->playerA->user->name }}</span><strong>{{ $match->result === RoundMatchResult::DRAW ? 'Remis' : ($match->result?->value ?? 'vs.') }}</strong><span>{{ $match->playerB?->user->name ?? 'Freilos' }}</span></div>
+                @endforeach
+            </details>
+        @endforeach
+        </section>
+    @endif
+    <flux:modal name="finish-tournament"><div class="space-y-6"><flux:heading size="lg">Turnier beenden?</flux:heading><p>{{ $currentRound && !$currentRound->isCompleted() ? 'Achtung: Es fehlen noch Ergebnisse in der aktuellen Runde.' : 'Die Tabelle wird als Endstand gespeichert.' }}</p><flux:button variant="danger" wire:click="finishTournament">Jetzt beenden</flux:button></div></flux:modal>
+    <flux:modal name="no-more-matches"><div class="space-y-6"><flux:heading size="lg">Keine weiteren Paarungen</flux:heading><p>Es konnten keine neuen Paarungen für alle Teilnehmenden gefunden werden. Du kannst das Turnier beenden.</p></div></flux:modal>
 </div>

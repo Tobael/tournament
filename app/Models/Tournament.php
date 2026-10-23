@@ -3,17 +3,38 @@
 namespace App\Models;
 
 use App\Enums\Status;
+use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class Tournament extends Model
 {
-    /** @use HasFactory<\Database\Factories\TournamentFactory> */
+    /** @use HasFactory<TournamentFactory> */
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::creating(fn ($tournament) => $tournament->invite_token = (string) Str::uuid());
+    }
+
+    public function participant(): ?TournamentUser
+    {
+        if (auth()->check()) {
+            return $this->users()->where('user_id', auth()->id())->first();
+        }
+
+        $identity = session('participants.'.$this->id);
+        if (! $identity || empty($identity['token'])) {
+            return null;
+        }
+
+        return $this->users()->whereKey($identity['id'])->where('recovery_hash', hash('sha256', $identity['token']))->first();
+    }
 
     protected $fillable = [
         'name',
@@ -35,7 +56,7 @@ class Tournament extends Model
 
     public function users(): HasMany
     {
-        return $this->hasMany(TournamentUser::class);
+        return $this->hasMany(TournamentUser::class)->chaperone();
     }
 
     public function participants(): HasManyThrough
@@ -45,12 +66,12 @@ class Tournament extends Model
 
     public function rounds(): HasMany
     {
-        return $this->hasMany(Round::class);
+        return $this->hasMany(Round::class)->chaperone();
     }
 
     public function currentRound(): ?Round
     {
-        return $this->rounds()->orderBy('round', 'desc')->first();
+        return $this->relationLoaded('rounds') ? $this->rounds->sortByDesc('round')->first() : $this->rounds()->orderBy('round', 'desc')->first();
     }
 
     public function matches(): HasManyThrough
@@ -60,11 +81,12 @@ class Tournament extends Model
 
     public function standings(): Collection
     {
+        $this->loadMissing(['users.user', 'matches']);
         $currentPoints = null;
         $place = 0;
 
         return $this->users
-            ->map(fn(TournamentUser $tuser) => [
+            ->map(fn (TournamentUser $tuser) => [
                 'id' => $tuser->id,
                 'name' => $tuser->user->name,
                 'deck' => $tuser->deckname,
@@ -77,8 +99,9 @@ class Tournament extends Model
                 if ($currentPoints !== $standing['points']) {
                     $currentPoints = $standing['points'];
                     $place++;
-                    $standing['place'] = $place;
                 }
+
+                $standing['place'] = $place;
 
                 return $standing;
             });

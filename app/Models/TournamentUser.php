@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use Database\Factories\TournamentUserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TournamentUser extends Model
 {
-    /** @use HasFactory<\Database\Factories\TournamentUserFactory> */
+    /** @use HasFactory<TournamentUserFactory> */
     use HasFactory;
+
+    protected $hidden = ['recovery_hash'];
 
     protected $fillable = [
         'tournament_id',
@@ -30,11 +33,11 @@ class TournamentUser extends Model
     public function points(): int
     {
         return $this->tournament
-            ->matches()
-            ->hasUser($this)
-            ->get()
+            ->matches
+            ->filter(fn (RoundMatch $match) => $match->player_a_id === $this->id || $match->player_b_id === $this->id)
             ->reduce(function (int $carry, RoundMatch $match) {
                 $index = $match->player_a_id == $this->id ? 0 : 1;
+
                 return $carry + ($match->result?->toPoints() ?? [0, 0])[$index];
             }, 0);
     }
@@ -42,10 +45,9 @@ class TournamentUser extends Model
     public function games(): int
     {
         return $this->tournament
-            ->matches()
-            ->hasUser($this)
-            ->get()
-            ->filter(fn(RoundMatch $match) => $match->result)
+            ->matches
+            ->filter(fn (RoundMatch $match) => $match->player_a_id === $this->id || $match->player_b_id === $this->id)
+            ->filter(fn (RoundMatch $match) => $match->result)
             ->count();
     }
 }

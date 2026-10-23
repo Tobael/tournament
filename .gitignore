@@ -24,3 +24,6 @@ yarn-error.log
 /.direnv
 _ide_helper.php
 _ide_helper_models.php
+/secrets/
+/backups/
+/data/

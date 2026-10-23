@@ -1,88 +1,31 @@
-# deploy/Dockerfile
+FROM node:22-alpine AS assets
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY resources resources
+COPY vite.config.js ./
 
-# stage 1: build stage
-FROM php:8.4-fpm-alpine as build
-
-ARG FLUX_USERNAME
-ARG FLUX_LICENSE_KEY
-
-# installing system dependencies and php extensions
-RUN apk add --no-cache \
-    zip \
-    libzip-dev \
-    freetype \
-    libjpeg-turbo \
-    libpng \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    nodejs \
-    npm \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install zip pdo pdo_mysql pcntl \
-    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
-    && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-enable gd
-
-# install composer
-COPY --from=composer:2.8.12 /usr/bin/composer /usr/bin/composer
-
+FROM php:8.4-fpm-alpine AS php-base
+RUN apk add --no-cache nginx curl sqlite-dev oniguruma-dev \
+    && docker-php-ext-install pdo_sqlite mbstring opcache
 WORKDIR /var/www/html
 
-# copy necessary files and change permissions
+FROM php-base AS dependencies
+RUN apk add --no-cache unzip
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY . .
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage \
-    && chmod -R 775 /var/www/html/bootstrap/cache
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-RUN composer config http-basic.composer.fluxui.dev "${FLUX_USERNAME}" "${FLUX_LICENSE_KEY}"
+FROM assets AS frontend
+COPY --from=dependencies /var/www/html/vendor /app/vendor
+RUN npm run build
 
-# install php and node.js dependencies
-RUN composer install --no-dev --prefer-dist \
-    && npm install \
-    && npm run build
-
-RUN chown -R www-data:www-data /var/www/html/vendor \
-    && chmod -R 775 /var/www/html/vendor
-
-RUN composer config --global --unset http-basic.composer.fluxui.dev
-
-# stage 2: production stage
-FROM php:8.4-fpm-alpine
-
-# install nginx
-RUN apk add --no-cache \
-    zip \
-    libzip-dev \
-    freetype \
-    libjpeg-turbo \
-    libpng \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    oniguruma-dev \
-    gettext-dev \
-    freetype-dev \
-    nginx \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install zip pdo pdo_mysql pcntl \
-    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
-    && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-enable gd \
-    && docker-php-ext-install bcmath \
-    && docker-php-ext-enable bcmath \
-    && docker-php-ext-install exif \
-    && docker-php-ext-enable exif \
-    && docker-php-ext-install gettext \
-    && docker-php-ext-enable gettext \
-    && docker-php-ext-install opcache \
-    && docker-php-ext-enable opcache \
-    && rm -rf /var/cache/apk/*
-
-# copy files from the build stage
-COPY --from=build /var/www/html /var/www/html
-COPY ./nginx.conf /etc/nginx/http.d/default.conf
-
-WORKDIR /var/www/html
-
-CMD ["sh", "-c", "php artisan queue:work & php artisan reverb:start --host=0.0.0.0 --port=8080 & php-fpm -F & nginx -g 'daemon off;'"]
+FROM php-base AS production
+COPY --from=dependencies --chown=www-data:www-data /var/www/html /var/www/html
+COPY --from=frontend /app/public/build /var/www/html/public/build
+COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY deploy/entrypoint.sh /usr/local/bin/tournament-entrypoint
+RUN chmod +x /usr/local/bin/tournament-entrypoint \
+    && chown -R www-data:www-data storage bootstrap/cache
+ENTRYPOINT ["tournament-entrypoint"]

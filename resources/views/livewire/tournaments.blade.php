@@ -1,72 +1,37 @@
 <div>
-    <div class="flex items-center justify-between">
-        <flux:heading size="xl">{{ __('Turniere') }}</flux:heading>
-
-        <flux:button variant="primary" icon="plus" wire:click="openCreateModal">
-            {{ __('Turnier erstellen') }}
-        </flux:button>
+    <section class="page-intro">
+        <p class="eyebrow">DEIN NÄCHSTES MATCH WARTET</p>
+        <div class="intro-row"><div><h1>Zusammen an den Tisch.</h1><p class="muted">Turnier öffnen, mitspielen, Ergebnisse eintragen.</p></div>
+        @if(auth()->user()->is_admin)
+            <flux:button variant="primary" icon="plus" wire:click="openCreateModal">Turnier erstellen</flux:button>
+        @endif</div>
+    </section>
+    <div class="section-heading"><h2>Turniere</h2><label>Sortieren <select wire:change="sort($event.target.value)" aria-label="Turniere sortieren"><option value="created_at">Datum</option><option value="name">Name</option><option value="status">Status</option></select></label></div>
+    <div class="event-filters">
+        <flux:input wire:model.live.debounce.300ms="search" type="search" label="Turnier suchen" placeholder="Name des Turniers" maxlength="100" />
+        <flux:select wire:model.live="status" label="Status"><option value="">Alle Turniere</option><option value="OPEN">Anmeldung offen</option><option value="IN_PROGRESS">Wird gespielt</option><option value="CLOSED">Beendet</option></flux:select>
     </div>
-    <flux:table :paginate="$this->tournaments">
-        <flux:table.columns>
-            <flux:table.column sortable :sorted="$sortBy === 'name'" :direction="$sortDirection" wire:click="sort('name')">
-                Name
-            </flux:table.column>
-            <flux:table.column sortable :sorted="$sortBy === 'participants'" :direction="$sortDirection" wire:click="sort('participants')">
-                # Spieler
-            </flux:table.column>
-            <flux:table.column sortable :sorted="$sortBy === 'created_at'" :direction="$sortDirection" wire:click="sort('created_at')">
-                Datum
-            </flux:table.column>
-            <flux:table.column sortable :sorted="$sortBy === 'status'" :direction="$sortDirection" wire:click="sort('status')">
-                Status
-            </flux:table.column>
-            <flux:table.column></flux:table.column>
-            <flux:table.column></flux:table.column>
-        </flux:table.columns>
-
-        <flux:table.rows>
-            @foreach ($this->tournaments as $tournament)
-                <flux:table.row :key="$tournament->id">
-                    <flux:table.cell class="flex items-center gap-3" wire:navigate :href="route('tournament', $tournament)">
-                        {{ $tournament->name }}
-                    </flux:table.cell>
-
-                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)">
-                        {{ $tournament->users->count() }}
-                    </flux:table.cell>
-
-                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)" class="whitespace-nowrap">
-                        {{ $tournament->created_at->format('d.m.Y H:i:s') }}
-                    </flux:table.cell>
-
-                    <flux:table.cell wire:navigate :href="route('tournament', $tournament)">
-                        <flux:icon name="{{$tournament->status->toIcon()}}"></flux:icon>
-                    </flux:table.cell>
-
-                    <flux:table.cell>
-                        @if($tournament->status == App\Enums\Status::OPEN && !($tournament->users()->where('user_id', auth()->id())->exists()))
-                            <flux:button icon="arrow-right-end-on-rectangle" variant="ghost" size="sm"
-                                         class="cursor-pointer"
-                                         wire:click="openParticipateModal({{$tournament->id}})"
-                                         inset="top bottom"></flux:button>
-                        @endif
-                    </flux:table.cell>
-
-                    <flux:table.cell>
-                        <flux:button icon="pencil" variant="ghost" size="sm" class="cursor-pointer"
-                                     wire:click.stop="openEditModal({{$tournament->id}})"
-                                     inset="top bottom"></flux:button>
-                        @if(auth()->user()->is_admin)
-                            <flux:button icon="trash" variant="ghost" size="sm" class="cursor-pointer"
-                                         wire:click.stop="openDeleteModal({{$tournament->id}})"
-                                         inset="top bottom"></flux:button>
-                        @endif
-                    </flux:table.cell>
-                </flux:table.row>
-            @endforeach
-        </flux:table.rows>
-    </flux:table>
-
+    <div class="tournament-grid" wire:loading.class="opacity-60">
+        @forelse ($this->tournaments as $tournament)
+            <article class="event-card">
+                <div class="card-top"><span class="status-pill {{ strtolower($tournament->status->name) }}">{{ match($tournament->status) { App\Enums\Status::OPEN => 'Anmeldung offen', App\Enums\Status::IN_PROGRESS => 'Wird gespielt', default => 'Beendet' } }}</span><span class="muted">{{ $tournament->created_at->format('d.m.Y') }}</span></div>
+                <a class="event-title" href="{{ route('tournament', $tournament) }}" wire:navigate>{{ $tournament->name }}</a>
+                <p class="muted">{{ $tournament->group->name }} · {{ $tournament->users_count }} Teilnehmende</p>
+                <div class="card-actions">
+                    <a class="arena-button" href="{{ route('tournament', $tournament) }}" wire:navigate>Turnier öffnen <span aria-hidden="true">↗</span></a>
+                    @if($tournament->status === App\Enums\Status::OPEN && !$tournament->joined)
+                        <flux:button wire:click="openParticipateModal({{ $tournament->id }})">Mitspielen</flux:button>
+                    @endif
+                </div>
+                @if(auth()->user()->is_admin)
+                    <div class="admin-actions"><flux:button variant="ghost" wire:click="openEditModal({{ $tournament->id }})">Bearbeiten</flux:button><flux:button variant="ghost" wire:click="openDeleteModal({{ $tournament->id }})">Löschen</flux:button></div>
+                @endif
+            </article>
+        @empty
+            <div class="empty-state"><h2>{{ $search || $status ? 'Kein passendes Turnier.' : 'Platz für die nächste Spielrunde.' }}</h2><p>{{ $search || $status ? 'Versuche einen anderen Namen oder Status.' : 'Hier erscheinen eure Turniere, sobald die Organisation eines erstellt.' }}</p></div>
+        @endforelse
+    </div>
+    <div class="pagination">{{ $this->tournaments->links() }}</div>
     <!-- Modals -->
     <flux:modal name="participate-tournament">
         @if($selectedTournament)
@@ -149,7 +114,7 @@
             {{ __('Turnier hinzufügen') }}
         </flux:heading>
 
-        <form class="space-y-6">
+        <form wire:submit="createTournament" class="space-y-6">
             <flux:input
                 wire:model="name"
                 label="Name"
@@ -175,9 +140,9 @@
 
                 <flux:button
                     variant="primary"
-                    wire:click="createTournament"
+                    type="submit"
                 >
-                    Ok
+                    Turnier erstellen
                 </flux:button>
             </div>
         </form>

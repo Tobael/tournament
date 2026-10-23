@@ -3,36 +3,60 @@
 namespace App\Livewire;
 
 use App\Enums\Status;
-use App\Events\TournamentUpdated;
 use App\Models\Group;
 use App\Models\Tournament;
 use App\Models\TournamentUser;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class Tournaments extends Component
 {
+    use WithPagination;
+
     #[Validate('required|string|max:255')]
     public string $name;
-    #[Validate('required|int')]
+
+    #[Validate('required|integer|exists:groups,id')]
     public int $groupId;
 
+    #[Url]
+    public string $search = '';
+
+    #[Url]
+    public string $status = '';
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatus(): void
+    {
+        $this->resetPage();
+    }
+
     public ?string $deckname = null;
+
     public string $sortDirection = 'desc';
+
     public string $sortBy = 'created_at';
 
     public ?Tournament $selectedTournament = null;
+
     public ?int $selectedTournamentId = null;
 
     public function mount(): void
     {
-        $this->groupId = Group::first()->id;
+        $this->groupId = (Group::first() ?? Group::create(['name' => 'Spielrunde']))->id;
     }
 
     public function sort($column): void
     {
+        abort_unless(in_array($column, ['name', 'created_at', 'status'], true), 422);
         if ($this->sortBy === $column) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
@@ -51,26 +75,32 @@ class Tournaments extends Component
 
     public function openCreateModal(): void
     {
+        abort_unless(auth()->user()?->is_admin, 403);
+
         $this->reset(['name']);
         $this->modal('create-tournament')->show();
     }
 
     public function createTournament(): void
     {
+        abort_unless(auth()->user()?->is_admin, 403);
+
         $this->validate();
 
         Tournament::create([
             'name' => $this->name,
             'status' => Status::OPEN,
-            'group_id' => $this->groupId
+            'group_id' => $this->groupId,
         ]);
 
         $this->modal('create-tournament')->close();
-        $this->reset(['name', 'groupId']);
+        $this->reset(['name']);
     }
 
     public function deleteTournament(): void
     {
+        abort_unless(auth()->user()?->is_admin, 403);
+
         if (auth()->user()->is_admin) {
             $this->selectedTournament->delete();
         }
@@ -79,6 +109,9 @@ class Tournaments extends Component
 
     public function editTournament(): void
     {
+        abort_unless(auth()->user()?->is_admin, 403);
+
+        $this->validate();
         $this->selectedTournament->update([
             'name' => $this->name,
             'group_id' => $this->groupId,
@@ -89,6 +122,7 @@ class Tournaments extends Component
 
     public function participateTournament(): void
     {
+        $this->validate(['deckname' => 'nullable|string|max:255']);
         if ($this->selectedTournament->status !== Status::OPEN) {
             return;
         }
@@ -103,15 +137,20 @@ class Tournaments extends Component
             ]
         );
 
-        event(new TournamentUpdated($this->selectedTournament->id));
-
         $this->modal('participate-tournament')->close();
     }
 
     #[Computed]
     public function tournaments()
     {
-        return Tournament::query()->tap(fn($query) => $this->sortBy ? $query->orderBy($this->sortBy, $this->sortDirection) : $query)->paginate(10);
+        abort_unless(in_array($this->sortBy, ['name', 'created_at', 'status'], true) && in_array($this->sortDirection, ['asc', 'desc'], true), 422);
+
+        abort_unless(in_array($this->status, ['', 'OPEN', 'IN_PROGRESS', 'CLOSED'], true) && mb_strlen($this->search) <= 100, 422);
+
+        return Tournament::query()
+            ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
+            ->when($this->status !== '', fn ($query) => $query->where('status', $this->status))
+            ->with('group')->withCount('users')->withExists(['users as joined' => fn ($query) => $query->where('user_id', auth()->id())])->tap(fn ($query) => $this->sortBy ? $query->orderBy($this->sortBy, $this->sortDirection) : $query)->paginate(10);
     }
 
     public function openParticipateModal(Tournament $tournament): void
@@ -123,6 +162,8 @@ class Tournaments extends Component
 
     public function openEditModal(Tournament $tournament): void
     {
+        abort_unless(auth()->user()?->is_admin, 403);
+
         $this->selectedTournament = $tournament;
         $this->name = $this->selectedTournament->name;
         $this->groupId = $this->selectedTournament->group_id;
@@ -132,6 +173,8 @@ class Tournaments extends Component
 
     public function openDeleteModal(Tournament $tournament): void
     {
+        abort_unless(auth()->user()?->is_admin, 403);
+
         $this->selectedTournament = $tournament;
         $this->modal('delete-tournament')->show();
     }

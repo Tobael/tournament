@@ -22,3 +22,14 @@ yarn-error.log
 /.idea
 /.vscode
 .git
+.env
+.env.*
+/secrets
+/backups
+/data
+/.agents
+/.aws
+/.codex
+/storage
+/database/*.sqlite*
+/bootstrap/cache/*.php
