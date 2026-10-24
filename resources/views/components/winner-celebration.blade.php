@@ -13,7 +13,7 @@
         <p class="muted">Gut gespielt. Danke an die ganze Runde!</p>
         <div class="winner-podium">
             @foreach($standings->where('place', '<=', 3)->groupBy('place') as $place => $players)
-                <div class="podium-place" data-place="{{ $place }}"><span class="podium-number">{{ $place }}</span><strong>{{ $players->pluck('name')->join(' & ') }}</strong><span>{{ $players->first()['points'] }} Punkte</span></div>
+                <div class="podium-place" data-place="{{ $place }}"><span class="podium-number">{{ $place }}</span><strong title="{{ $players->pluck('name')->join(' & ') }}">{{ $players->pluck('name')->join(' & ') }}</strong><span>{{ $players->first()['points'] }} Punkte</span></div>
             @endforeach
         </div>
     </section>

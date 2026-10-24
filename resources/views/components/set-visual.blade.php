@@ -1,6 +1,6 @@
 @props(['code', 'name', 'variant' => 'card', 'context' => 'event'])
 @if($code && preg_match('/^[a-z0-9]{2,10}$/', $code))
-    <figure class="set-visual set-visual-{{ $variant }}" data-set-visual data-artwork-url="{{ $variant === 'card' ? '' : route('set.artwork', $code) }}" wire:key="set-visual-{{ $context }}-{{ $code }}" @if($variant !== 'header') wire:ignore @endif>
+    <figure class="set-visual set-visual-{{ $variant }}" data-set-visual data-artwork-url="{{ $variant === 'card' ? '' : route('set.artwork', $code) }}" wire:key="set-visual-{{ $context }}-{{ $code }}" @if(!in_array($variant, ['header', 'background'])) wire:ignore @endif>
         <div class="set-art" data-set-art hidden wire:ignore>
             <img data-set-art-image alt="" decoding="async" loading="eager" referrerpolicy="no-referrer" />
         </div>

@@ -1,6 +1,9 @@
+import { setupSetParallax } from './set-parallax';
 import { setupSetCardTools } from './set-card-tools';
 import { setupSetVisuals } from './set-visuals';
 import { copyLink, shareLink, readParticipants, rememberParticipant, forgetParticipant, restoreParticipant } from './browser-actions';
+
+const refreshSetParallax = setupSetParallax();
 
 // Delegation survives Livewire polling and page navigation without stale URLs.
 document.addEventListener('click', event => {
@@ -72,9 +75,9 @@ document.addEventListener('DOMContentLoaded', setupDeviceReturn);
 void setupDeviceReturn();
 
 // Artwork is independent of Livewire requests and never delays match reporting.
-document.addEventListener('livewire:navigated', () => { setupSetVisuals(); setupSetCardTools(); });
-document.addEventListener('DOMContentLoaded', () => { setupSetVisuals(); setupSetCardTools(); });
-new MutationObserver(() => { setupSetVisuals(); setupSetCardTools(); }).observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('livewire:navigated', () => { setupSetVisuals(); setupSetCardTools(); refreshSetParallax(); });
+document.addEventListener('DOMContentLoaded', () => { setupSetVisuals(); setupSetCardTools(); refreshSetParallax(); });
+new MutationObserver(() => { setupSetVisuals(); setupSetCardTools(); refreshSetParallax(); }).observe(document.documentElement, { childList: true, subtree: true });
 setupSetVisuals();
 
 setupSetCardTools();

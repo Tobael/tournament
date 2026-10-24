@@ -11,12 +11,12 @@
     $isOrganizer = auth()->user()?->is_admin;
     $isCommander = $tournament->format === 'commander';
 @endphp
-<div @if($tournament->status !== Status::CLOSED) wire:poll.10s="refresh" @endif>
+<div class="tournament-page" @if($tournament->status !== Status::CLOSED) wire:poll.10s="refresh" @endif>
     <div data-device-participant data-invite="{{ $tournament->invite_token }}" data-title="{{ $tournament->name }}" data-name="{{ $participant?->user->name }}" data-token="{{ $deviceToken }}" data-participating="{{ $participant ? '1' : '0' }}" data-active="{{ $tournament->status !== Status::CLOSED ? '1' : '0' }}">
         <p class="muted" data-device-message role="status"></p>
     </div>
     <section class="page-intro">
-        <x-set-visual :code="$tournament->format === 'sealed' ? $tournament->set_code : null" :name="$tournament->set_name" variant="header" :context="'header-'.$tournament->id">
+        <x-set-visual :code="$tournament->format === 'sealed' ? $tournament->set_code : null" :name="$tournament->set_name" variant="background" :context="'background-'.$tournament->id">
         <p class="eyebrow">{{ $tournament->group->name }} · {{ $tournament->users->count() }} TEILNEHMENDE</p>
         <h1>{{ $tournament->name }}</h1>
         @if($tournament->scheduled_on)
