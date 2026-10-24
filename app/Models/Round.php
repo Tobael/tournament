@@ -25,7 +25,7 @@ class Round extends Model
 
     public function isCompleted(): bool
     {
-        return $this->matches->reduce(fn (bool $carry, RoundMatch $match) => $carry && $match->result, true);
+        return $this->matches->reduce(fn (bool $carry, RoundMatch $match) => $carry && $match->isCompleted(), true);
     }
 
     public function getMatchForUser(): ?RoundMatch
@@ -33,6 +33,10 @@ class Round extends Model
         $tuser = $this->tournament->participant();
         if (! $tuser) {
             return null;
+        }
+
+        if ($this->tournament->format === 'commander') {
+            return $this->matches->first(fn (RoundMatch $match) => $match->players->contains('id', $tuser->id));
         }
 
         return $this->matches->first(fn (RoundMatch $match) => $match->player_a_id == $tuser->id || $match->player_b_id == $tuser->id);

@@ -29,7 +29,6 @@ class ParticipantController extends Controller
     {
         $data = $request->validate([
             'name' => auth()->check() ? ['nullable'] : ['required', 'string', 'max:80'],
-            'deckname' => ['nullable', 'string', 'max:255'],
         ]);
         $token = Str::random(64);
         $participant = DB::transaction(function () use ($tournament, $data, $token) {
@@ -48,7 +47,7 @@ class ParticipantController extends Controller
                 'password' => Str::random(64),
                 'is_admin' => false,
             ]);
-            $participant = $tournament->users()->create(['user_id' => $user->id, 'deckname' => $data['deckname'] ?? null]);
+            $participant = $tournament->users()->create(['user_id' => $user->id]);
             $participant->forceFill(['recovery_hash' => hash('sha256', $token)])->save();
 
             return $participant;

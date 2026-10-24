@@ -40,12 +40,18 @@ class Tournament extends Model
         'name',
         'status',
         'group_id',
+        'format',
+        'set_code',
+        'set_name',
+        'table_preference',
+        'round_limit',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => Status::class,
+            'round_limit' => 'integer',
         ];
     }
 
@@ -89,7 +95,6 @@ class Tournament extends Model
             ->map(fn (TournamentUser $tuser) => [
                 'id' => $tuser->id,
                 'name' => $tuser->user->name,
-                'deck' => $tuser->deckname,
                 'games' => $tuser->games(),
                 'points' => $tuser->points(),
             ])
@@ -109,6 +114,10 @@ class Tournament extends Model
 
     public function allMatchesGenerated(): bool
     {
+        if ($this->format === 'commander') {
+            return $this->rounds->count() >= $this->round_limit;
+        }
+
         $participantCount = $this->users->count();
 
         if ($participantCount % 2 != 0) {

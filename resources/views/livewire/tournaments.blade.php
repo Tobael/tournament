@@ -16,6 +16,7 @@
             <article class="event-card">
                 <div class="card-top"><span class="status-pill {{ strtolower($tournament->status->name) }}">{{ match($tournament->status) { App\Enums\Status::OPEN => 'Anmeldung offen', App\Enums\Status::IN_PROGRESS => 'Wird gespielt', default => 'Beendet' } }}</span><span class="muted">{{ $tournament->created_at->format('d.m.Y') }}</span></div>
                 <a class="event-title" href="{{ route('tournament', $tournament) }}" wire:navigate>{{ $tournament->name }}</a>
+                <p class="muted">{{ match($tournament->format) { 'sealed' => 'Sealed', 'commander' => 'Commander', default => 'Constructed' } }}{{ $tournament->set_name ? ' · '.$tournament->set_name : '' }}</p>
                 <p class="muted">{{ $tournament->group->name }} · {{ $tournament->users_count }} Teilnehmende</p>
                 <div class="card-actions">
                     <a class="arena-button" href="{{ route('tournament', $tournament) }}" wire:navigate>Turnier öffnen <span aria-hidden="true">↗</span></a>
@@ -41,6 +42,7 @@
 
             <form wire:submit="editTournament" class="space-y-6">
                 <flux:input wire:model="name" label="Name"/>
+                <x-tournament-format-fields :format="$format" :sets="$sets" :table-preference="$tablePreference" :round-limit="$roundLimit" />
 
                 <flux:select wire:model="groupId" placeholder="Gruppe auswählen...">
                     @foreach($groups as $group)
@@ -93,6 +95,8 @@
                 wire:model="name"
                 label="Name"
             />
+
+            <x-tournament-format-fields :format="$format" :sets="$sets" :table-preference="$tablePreference" :round-limit="$roundLimit" />
 
             <flux:select
                 wire:model="groupId"

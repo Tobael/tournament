@@ -20,7 +20,7 @@ function eventForParticipants(): Tournament
 test('event links allow viewing and joining without an account login', function () {
     $event = eventForParticipants();
     $this->get(route('play', $event->invite_token))->assertOk()->assertSee('Ohne Passwort');
-    $this->post(route('play.join', $event->invite_token), ['name' => 'Alex', 'deckname' => 'Goblins'])->assertRedirect(route('play', $event->invite_token));
+    $this->post(route('play.join', $event->invite_token), ['name' => 'Alex'])->assertRedirect(route('play', $event->invite_token));
     $participant = $event->users()->first();
     expect($participant->user->is_admin)->toBeFalsy();
     expect(auth()->check())->toBeFalse();
@@ -183,7 +183,7 @@ test('an organizer can join, manage and play the same tournament without changin
     $opponent = User::factory()->create(['name' => 'Sam']);
     $event->users()->create(['user_id' => $opponent->id]);
     $this->actingAs($organizer)->get(route('tournament', $event))->assertOk()->assertSee('Organisieren und mitspielen.');
-    $this->post(route('play.join', $event->invite_token), ['deckname' => 'Goblins'])->assertRedirect();
+    $this->post(route('play.join', $event->invite_token))->assertRedirect();
     expect(User::count())->toBe(2);
     expect($event->participant()->user_id)->toBe($organizer->id);
     $token = session('participants.'.$event->id.'.token');

@@ -17,7 +17,6 @@ class TournamentUser extends Model
     protected $fillable = [
         'tournament_id',
         'user_id',
-        'deckname',
     ];
 
     public function tournament(): BelongsTo
@@ -32,6 +31,10 @@ class TournamentUser extends Model
 
     public function points(): int
     {
+        if ($this->tournament->format === 'commander') {
+            return $this->tournament->matches->sum(fn (RoundMatch $match) => $match->commander_scores[$this->id] ?? 0);
+        }
+
         return $this->tournament
             ->matches
             ->filter(fn (RoundMatch $match) => $match->player_a_id === $this->id || $match->player_b_id === $this->id)
@@ -44,6 +47,10 @@ class TournamentUser extends Model
 
     public function games(): int
     {
+        if ($this->tournament->format === 'commander') {
+            return $this->tournament->matches->filter(fn (RoundMatch $match) => isset($match->commander_scores[$this->id]))->count();
+        }
+
         return $this->tournament
             ->matches
             ->filter(fn (RoundMatch $match) => $match->player_a_id === $this->id || $match->player_b_id === $this->id)

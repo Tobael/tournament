@@ -183,3 +183,25 @@ h1 { font-weight: 700; letter-spacing: -1.6px; }
 .arena-body [data-flux-modal] dialog, .arena-body [data-flux-modal-content] { background: #1b1927; border: 1px solid #4b3c61; color: #f0f1fb; }
 .arena-body [data-flux-modal] dialog::backdrop { background: #070710c9; backdrop-filter: blur(5px); }
 @media (max-width: 640px) { .welcome-intro::after { right: -18px; left: 10%; }.event-navigation { box-shadow: 0 -8px 28px #00000070; }.score-button:hover { transform: none; } }
+
+.event-format { color: #d5c0ff; font-size: 14px; margin-bottom: 10px; }
+.winner-celebration { position: relative; isolation: isolate; overflow: hidden; text-align: center; padding: 40px 24px 0; margin-bottom: 28px; border: 1px solid #95773c; border-radius: 24px 4px 24px 24px; background: radial-gradient(ellipse at 50% 0, #74512655, transparent 70%), #191722; }
+.winner-rays { position: absolute; z-index: -1; inset: -100% -50%; background: repeating-conic-gradient(from 0deg at 50% 50%, #e7c77908 0deg 12deg, transparent 12deg 24deg); animation: coronation 1s ease-out both; pointer-events: none; }
+.winner-crown { width: 88px; height: 76px; margin: 0 auto 20px; color: #f3ce75; filter: drop-shadow(0 0 20px #ebbc4d55); animation: coronation .8s ease-out both; }
+.winner-celebration .eyebrow { color: #e7c779; }
+.winner-celebration h2 { font-size: clamp(28px, 5vw, 48px); line-height: 1.2; overflow-wrap: anywhere; }
+.winner-points { color: #efcf86; margin: 12px 0 6px; }
+.winner-podium { display: flex; align-items: end; justify-content: center; gap: 10px; margin: 32px auto 0; max-width: 700px; }
+.podium-place { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 18px 10px; min-height: 110px; border: 1px solid #756540; border-bottom: 0; border-radius: 12px 12px 0 0; background: #e7c7790d; }
+.podium-place strong { overflow-wrap: anywhere; font-size: 14px; }.podium-place > span:last-child { font-size: 12px; color: #bdb5a2; }
+.podium-place[data-place="1"] { order: 2; min-height: 155px; background: linear-gradient(#e7c77922, #e7c77908); }.podium-place[data-place="2"] { order: 1; }.podium-place[data-place="3"] { order: 3; min-height: 95px; }
+.podium-number { color: #e7c779; font-size: 28px; font-family: 'Space Grotesk', sans-serif; }
+.match-card { border-bottom: 1px solid #302a40; }.match-timer { padding: 0 0 18px; }.timer-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px; }.timer-controls select { min-height: 44px; padding: 8px; background: #242136; border: 1px solid #45415f; border-radius: 8px; }.timer-digits { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-variant-numeric: tabular-nums; color: #c6fb65; }.timer-expired .timer-digits { color: #f3ce75; }
+@keyframes coronation { from { opacity: 0; transform: translateY(-15px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.commander-table { padding: 22px; margin: 16px 0; border: 1px solid #4b3c61; border-radius: 16px 4px 16px 16px; background: #171722; }
+.commander-table.own-table { border-color: #8da95d; }.commander-table h3 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; }
+.table-seats { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }.table-seats li { display: flex; align-items: center; gap: 12px; min-width: 0; }.table-seats strong { overflow-wrap: anywhere; min-width: 0; }.seat-number { flex-shrink: 0; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid #5d4a77; border-radius: 50%; color: #d5c0ff; font-size: 12px; }.seat-points { margin-left: auto; white-space: nowrap; color: #c6fb65; font-size: 14px; }
+.commander-report { border-top: 1px solid #40344e; padding-top: 18px; }.commander-report > label { display: block; font-size: 14px; margin: 16px 0 8px; }.commander-report button:disabled { opacity: .4; cursor: default; }.timeout-survivors { margin-top: 20px; border: 1px solid #756033; border-radius: 12px; padding: 16px; }.timeout-survivors legend { font-size: 14px; padding: 0 8px; color: #efcf86; }.timeout-survivors label { display: flex; align-items: center; gap: 10px; min-height: 44px; }.timeout-survivors input { accent-color: #c6fb65; width: 18px; height: 18px; }.timeout-survivors button { margin-top: 12px; }
+@media (max-width: 640px) { .commander-table { padding: 18px 14px; }.commander-table .section-heading { flex-wrap: wrap; } }
+.table-preview { display: inline-block; color: #d3ff97; background: #c6fb650b; border: 1px solid #536f38; border-radius: 10px; padding: 10px 14px; margin: 12px 0; font-size: 14px; }
