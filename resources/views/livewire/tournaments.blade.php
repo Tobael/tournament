@@ -6,7 +6,7 @@
             <flux:button variant="primary" icon="plus" wire:click="openCreateModal">Turnier erstellen</flux:button>
         @endif</div>
     </section>
-    <div class="section-heading"><h2>Turniere</h2><label>Sortieren <select wire:change="sort($event.target.value)" aria-label="Turniere sortieren"><option value="scheduled_on">Spieltermin</option><option value="created_at">Erstellt</option><option value="name">Name</option><option value="status">Status</option></select></label></div>
+    <div class="section-heading"><h2>Turniere</h2><label>Sortieren <select wire:change="sort($event.target.value)" aria-label="Turniere sortieren"><option value="scheduled_on" @selected($sortBy === 'scheduled_on')>Spieltermin</option><option value="created_at" @selected($sortBy === 'created_at')>Erstellt</option><option value="name" @selected($sortBy === 'name')>Name</option><option value="status" @selected($sortBy === 'status')>Status</option></select></label></div>
     <div class="event-filters">
         <flux:input wire:model.live.debounce.300ms="search" type="search" label="Turnier suchen" placeholder="Name des Turniers" maxlength="100" />
         <flux:select wire:model.live="status" label="Status"><option value="">Alle Turniere</option><option value="OPEN">Anmeldung offen</option><option value="IN_PROGRESS">Wird gespielt</option><option value="CLOSED">Beendet</option></flux:select>
