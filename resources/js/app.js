@@ -1,3 +1,4 @@
+import { setupSetCardTools } from './set-card-tools';
 import { setupSetVisuals } from './set-visuals';
 import { copyLink, shareLink, readParticipants, rememberParticipant, forgetParticipant, restoreParticipant } from './browser-actions';
 
@@ -71,7 +72,9 @@ document.addEventListener('DOMContentLoaded', setupDeviceReturn);
 void setupDeviceReturn();
 
 // Artwork is independent of Livewire requests and never delays match reporting.
-document.addEventListener('livewire:navigated', () => setupSetVisuals());
-document.addEventListener('DOMContentLoaded', () => setupSetVisuals());
-new MutationObserver(() => setupSetVisuals()).observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('livewire:navigated', () => { setupSetVisuals(); setupSetCardTools(); });
+document.addEventListener('DOMContentLoaded', () => { setupSetVisuals(); setupSetCardTools(); });
+new MutationObserver(() => { setupSetVisuals(); setupSetCardTools(); }).observe(document.documentElement, { childList: true, subtree: true });
 setupSetVisuals();
+
+setupSetCardTools();

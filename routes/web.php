@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ParticipantController;
+use App\Http\Controllers\SetCardController;
 use App\Http\Controllers\SetVisualController;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
 Route::view('/', 'welcome')->name('home');
+Route::get('/set-cards/{code}/top', [SetCardController::class, 'topPulls'])->where('code', '[a-z0-9]{2,10}')->middleware('throttle:30,1')->name('set.top-pulls');
+Route::get('/set-cards/{code}/lookup', [SetCardController::class, 'lookup'])->where('code', '[a-z0-9]{2,10}')->middleware('throttle:60,1')->name('set.card-lookup');
 Route::get('/set-visuals/{code}/artwork', [SetVisualController::class, 'artwork'])->where('code', '[a-z0-9]{2,10}')->middleware('throttle:120,1')->name('set.artwork');
 Route::get('/set-visuals/{code}/symbol', [SetVisualController::class, 'symbol'])->where('code', '[a-z0-9]{2,10}')->middleware('throttle:120,1')->name('set.symbol');
 Route::get('/join', [ParticipantController::class, 'open'])->middleware('throttle:30,1')->name('play.open');

@@ -14,6 +14,7 @@ export function setupSetVisuals(root = document) {
         symbol.addEventListener('load', showSymbol, { once: true });
         if (symbol.complete && symbol.naturalWidth > 0) showSymbol();
         const url = figure.dataset.artworkUrl;
+        if (!url) continue;
         if (!artworkRequests.has(url)) {
             artworkRequests.set(url, fetch(url, { headers: { Accept: 'application/json' } })
                 .then(response => response.ok ? response.json() : null).catch(() => null));
@@ -23,6 +24,8 @@ export function setupSetVisuals(root = document) {
             const image = figure.querySelector('[data-set-art-image]');
             image.addEventListener('load', () => {
                 figure.querySelector('[data-set-art]').hidden = false;
+                const caption = figure.querySelector('[data-set-caption]');
+                if (caption) caption.hidden = false;
             }, { once: true });
             figure.querySelector('[data-set-credit]').textContent = `Illustration: ${artwork.artist} · ${artwork.card}`;
             const source = figure.querySelector('[data-set-source]');

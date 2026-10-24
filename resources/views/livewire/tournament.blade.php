@@ -16,6 +16,7 @@
         <p class="muted" data-device-message role="status"></p>
     </div>
     <section class="page-intro">
+        <x-set-visual :code="$tournament->format === 'sealed' ? $tournament->set_code : null" :name="$tournament->set_name" variant="header" :context="'header-'.$tournament->id">
         <p class="eyebrow">{{ $tournament->group->name }} · {{ $tournament->users->count() }} TEILNEHMENDE</p>
         <h1>{{ $tournament->name }}</h1>
         @if($tournament->scheduled_on)
@@ -30,11 +31,8 @@
             <p class="muted">Deckwechsel zwischen den Runden sind frei. Sieg: 3 Punkte · bei Zeitlimit: 1 Punkt pro verbliebener Person.</p>
         @endif
         <p class="muted">{{ match($tournament->status) { Status::OPEN => 'Die Anmeldung läuft. Mach es dir am Tisch gemütlich.', Status::IN_PROGRESS => 'Gute Spiele! Hier findest du dein Match und alle Ergebnisse.', Status::CLOSED => 'Alle Spiele sind gespielt. Danke fürs Mitmachen!' } }}</p>
+        </x-set-visual>
     </section>
-
-    @if($tournament->format === 'sealed' && $tournament->set_code)
-        <x-set-visual :code="$tournament->set_code" :name="$tournament->set_name" variant="hero" :context="'hero-'.$tournament->id" />
-    @endif
 
     @if($tournament->status === Status::CLOSED)
         <x-winner-celebration :tournament="$tournament" />
@@ -44,6 +42,7 @@
         @if($participant)<a href="#my-match">Mein Spiel</a>@endif
     @if(!$participant && $tournament->status === Status::OPEN)<a href="#join">Mitspielen</a>@endif
     <a href="#standings">Tabelle</a>
+    @if($tournament->format === 'sealed' && $tournament->set_code)<a href="#set-cards">Karten</a>@endif
     @if($currentRound)<a href="#rounds">Runden</a>@endif
     @if($isOrganizer)<a href="#organization">Organisation</a>@endif
 </nav>
@@ -149,6 +148,10 @@
                 @endif
             </div>
         </section>
+    @endif
+
+    @if($tournament->format === 'sealed' && $tournament->set_code)
+        <x-set-card-tools :code="$tournament->set_code" :name="$tournament->set_name" />
     @endif
 
     <section id="standings" class="results-section">
