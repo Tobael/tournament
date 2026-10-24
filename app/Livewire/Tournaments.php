@@ -27,6 +27,9 @@ class Tournaments extends Component
 
     public string $setCode = '';
 
+    #[Validate('nullable|date_format:Y-m-d')]
+    public string $scheduledDate = '';
+
     #[Validate('required|in:balanced,small,large')]
     public string $tablePreference = 'balanced';
 
@@ -86,7 +89,7 @@ class Tournaments extends Component
 
     public function sort($column): void
     {
-        abort_unless(in_array($column, ['name', 'created_at', 'status'], true), 422);
+        abort_unless(in_array($column, ['name', 'created_at', 'scheduled_on', 'status'], true), 422);
         if ($this->sortBy === $column) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
@@ -107,7 +110,7 @@ class Tournaments extends Component
     {
         abort_unless(auth()->user()?->is_admin, 403);
 
-        $this->reset(['name', 'format', 'setCode', 'selectedTournament', 'tablePreference', 'roundLimit']);
+        $this->reset(['name', 'format', 'setCode', 'scheduledDate', 'selectedTournament', 'tablePreference', 'roundLimit']);
         $this->sets = app(MagicSetCatalog::class)->sets();
         $this->modal('create-tournament')->show();
     }
@@ -120,6 +123,7 @@ class Tournaments extends Component
 
         Tournament::create([
             'name' => $this->name,
+            'scheduled_on' => $this->scheduledDate ?: null,
             ...$this->setDetails(),
             'table_preference' => $this->tablePreference,
             'round_limit' => $this->roundLimit,
@@ -128,7 +132,7 @@ class Tournaments extends Component
         ]);
 
         $this->modal('create-tournament')->close();
-        $this->reset(['name', 'format', 'setCode', 'selectedTournament', 'tablePreference', 'roundLimit']);
+        $this->reset(['name', 'format', 'setCode', 'scheduledDate', 'selectedTournament', 'tablePreference', 'roundLimit']);
     }
 
     public function deleteTournament(): void
@@ -159,6 +163,7 @@ class Tournaments extends Component
             'table_preference' => $this->tablePreference,
             'round_limit' => $this->roundLimit,
             'name' => $this->name,
+            'scheduled_on' => $this->scheduledDate ?: null,
             'group_id' => $this->groupId,
         ]);
 
@@ -168,7 +173,7 @@ class Tournaments extends Component
     #[Computed]
     public function tournaments()
     {
-        abort_unless(in_array($this->sortBy, ['name', 'created_at', 'status'], true) && in_array($this->sortDirection, ['asc', 'desc'], true), 422);
+        abort_unless(in_array($this->sortBy, ['name', 'created_at', 'scheduled_on', 'status'], true) && in_array($this->sortDirection, ['asc', 'desc'], true), 422);
 
         abort_unless(in_array($this->status, ['', 'OPEN', 'IN_PROGRESS', 'CLOSED'], true) && mb_strlen($this->search) <= 100, 422);
 
@@ -184,6 +189,7 @@ class Tournaments extends Component
 
         $this->selectedTournament = $tournament;
         $this->name = $this->selectedTournament->name;
+        $this->scheduledDate = $tournament->scheduled_on?->format('Y-m-d') ?? '';
         $this->groupId = $this->selectedTournament->group_id;
         $this->format = $tournament->format;
         $this->tablePreference = $tournament->table_preference;

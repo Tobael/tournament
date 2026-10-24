@@ -1,17 +1,20 @@
-@props(['format', 'sets', 'tablePreference' => 'balanced', 'roundLimit' => 3])
+@props(['format', 'sets', 'tablePreference' => 'balanced', 'roundLimit' => 3, 'setCode' => '', 'context' => 'form'])
 <flux:select wire:model.live="format" label="Format">
     <option value="sealed">Sealed</option>
     <option value="commander">Commander · Multiplayer-Liga</option>
     <option value="constructed">Constructed / anderes Format</option>
 </flux:select>
 @if($format === 'sealed')
-    <flux:select wire:model="setCode" label="Sealed-Set">
+    <flux:select wire:model.live="setCode" label="Sealed-Set">
         <option value="">Offen / gemischte Sets</option>
         @foreach($sets as $set)
             <option value="{{ $set['code'] }}">{{ $set['name'] }} ({{ strtoupper($set['code']) }}){{ isset($set['released_at']) && $set['released_at'] > now()->toDateString() ? ' · angekündigt' : '' }}</option>
         @endforeach
     </flux:select>
     <flux:error name="setCode" />
+    @if($setCode)
+        <x-set-visual :code="$setCode" :name="collect($sets)->firstWhere('code', $setCode)['name'] ?? $setCode" variant="preview" :context="$context" />
+    @endif
     <p class="muted">{{ count($sets) ? 'Set-Auswahl von Scryfall · täglich aktualisiert, neueste zuerst.' : 'Set-Auswahl gerade nicht erreichbar. Du kannst das Set später ergänzen.' }}</p>
 @endif
 

@@ -18,6 +18,9 @@
     <section class="page-intro">
         <p class="eyebrow">{{ $tournament->group->name }} · {{ $tournament->users->count() }} TEILNEHMENDE</p>
         <h1>{{ $tournament->name }}</h1>
+        @if($tournament->scheduled_on)
+            <p class="event-date"><span aria-hidden="true">◷</span> <time datetime="{{ $tournament->scheduled_on->format('Y-m-d') }}">{{ $tournament->scheduled_on->format('d.m.Y') }}</time> · Euer Spielabend</p>
+        @endif
         <p class="event-format">{{ match($tournament->format) { 'sealed' => 'Sealed', 'commander' => 'Commander', default => 'Constructed' } }}{{ $tournament->set_name ? ' · '.$tournament->set_name : '' }}</p>
         @if($isCommander)
             <p class="muted">{{ $tournament->round_limit }} Runden · {{ match($tournament->table_preference) { 'small' => 'Möglichst 3 Personen pro Tisch', 'large' => 'Möglichst 5 Personen pro Tisch', default => 'Möglichst 4 Personen pro Tisch' } }} · keine Freilose</p>
@@ -28,6 +31,10 @@
         @endif
         <p class="muted">{{ match($tournament->status) { Status::OPEN => 'Die Anmeldung läuft. Mach es dir am Tisch gemütlich.', Status::IN_PROGRESS => 'Gute Spiele! Hier findest du dein Match und alle Ergebnisse.', Status::CLOSED => 'Alle Spiele sind gespielt. Danke fürs Mitmachen!' } }}</p>
     </section>
+
+    @if($tournament->format === 'sealed' && $tournament->set_code)
+        <x-set-visual :code="$tournament->set_code" :name="$tournament->set_name" variant="hero" :context="'hero-'.$tournament->id" />
+    @endif
 
     @if($tournament->status === Status::CLOSED)
         <x-winner-celebration :tournament="$tournament" />

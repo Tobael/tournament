@@ -1,3 +1,4 @@
+import { setupSetVisuals } from './set-visuals';
 import { copyLink, shareLink, readParticipants, rememberParticipant, forgetParticipant, restoreParticipant } from './browser-actions';
 
 // Delegation survives Livewire polling and page navigation without stale URLs.
@@ -68,3 +69,9 @@ async function setupDeviceReturn() {
 document.addEventListener('livewire:navigated', setupDeviceReturn);
 document.addEventListener('DOMContentLoaded', setupDeviceReturn);
 void setupDeviceReturn();
+
+// Artwork is independent of Livewire requests and never delays match reporting.
+document.addEventListener('livewire:navigated', () => setupSetVisuals());
+document.addEventListener('DOMContentLoaded', () => setupSetVisuals());
+new MutationObserver(() => setupSetVisuals()).observe(document.documentElement, { childList: true, subtree: true });
+setupSetVisuals();

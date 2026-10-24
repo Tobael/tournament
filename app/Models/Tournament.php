@@ -43,6 +43,7 @@ class Tournament extends Model
         'format',
         'set_code',
         'set_name',
+        'scheduled_on',
         'table_preference',
         'round_limit',
     ];
@@ -52,6 +53,7 @@ class Tournament extends Model
         return [
             'status' => Status::class,
             'round_limit' => 'integer',
+            'scheduled_on' => 'immutable_date',
         ];
     }
 
