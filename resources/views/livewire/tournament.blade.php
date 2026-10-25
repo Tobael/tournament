@@ -42,6 +42,7 @@
         @if($participant)<a href="#my-match">Mein Spiel</a>@endif
     @if(!$participant && $tournament->status === Status::OPEN)<a href="#join">Mitspielen</a>@endif
     <a href="#standings">Tabelle</a>
+    <a href="{{ route('tv') }}">TV-Modus ↗</a>
     @if($tournament->format === 'sealed' && $tournament->set_code)<a href="#set-cards">Karten</a>@endif
     @if($currentRound)<a href="#rounds">Runden</a>@endif
     @if($isOrganizer)<a href="#organization">Organisation</a>@endif

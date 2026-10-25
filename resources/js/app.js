@@ -1,6 +1,10 @@
 import { setupSetParallax } from './set-parallax';
 import { setupSetCardTools } from './set-card-tools';
 import { setupSetVisuals } from './set-visuals';
+import { setupTournamentTv } from './tournament-tv';
+
+document.addEventListener('DOMContentLoaded', setupTournamentTv);
+setupTournamentTv();
 import { copyLink, shareLink, readParticipants, rememberParticipant, forgetParticipant, restoreParticipant } from './browser-actions';
 
 const refreshSetParallax = setupSetParallax();

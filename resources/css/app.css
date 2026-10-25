@@ -229,3 +229,68 @@ h1 { font-weight: 700; letter-spacing: -1.6px; }
 .set-visual-card { border: 0; border-radius: 0; background: none; margin: -10px 0 18px; }.set-visual-card .set-identity { padding: 0; gap: 10px; }.set-visual-card .set-symbol { width: 30px; height: 30px; flex-basis: 30px; border-radius: 7px; }.set-visual-card .set-symbol img { width: 20px; height: 20px; }.set-visual-card .set-identity-text strong { font-size: 13px; color: #bdb0cf; }.set-visual-card .eyebrow, .set-visual-card .set-code { display: none; }
 .set-card-tools { margin-top: 28px; }.set-card-tools .eyebrow { margin-bottom: 8px; }.card-number-search { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(100px, 1fr) auto; align-items: end; gap: 12px; margin: 22px 0 12px; }.card-number-search label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #bdb0cf; }.card-number-search input, .card-number-search select, .top-pulls-panel select { background: #101019; border: 1px solid #4b3c61; border-radius: 9px; padding: 11px; min-height: 46px; width: 100%; }.card-search-status { min-height: 24px; margin-bottom: 12px; }.card-lookup-result { max-width: 560px; padding: 16px; border: 1px solid #4b5c36; border-radius: 14px; margin-bottom: 20px; background: #c6fb6506; }.card-lookup-result .valued-card { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: center; gap: 20px; }.top-pulls-panel { border-top: 1px solid #40344e; padding-top: 6px; }.top-pulls-panel summary { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }.top-pulls-panel summary::before { content: '✦'; color: #d5c0ff; }.top-pulls-panel .section-heading { margin-top: 16px; }.top-pulls-panel .section-heading label { display: flex; align-items: center; gap: 10px; }.top-pulls-panel select { width: auto; }.top-pulls-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 20px 0; }.valued-card { min-width: 0; }.valued-card img { display: block; width: 100%; border-radius: 10px; aspect-ratio: 488/680; object-fit: contain; }.valued-card strong { display: block; font-size: 13px; line-height: 1.4; margin-top: 10px; overflow-wrap: anywhere; }.valued-card .muted { font-size: 11px; margin-top: 4px; }.card-value { color: #c6fb65; font-size: 18px; font-family: 'Space Grotesk', sans-serif; margin-top: 6px; }.foil-value { color: #d5c0ff; }.price-note { color: #8f889f; font-size: 11px; line-height: 1.6; margin-top: 16px; }
 @media (max-width: 640px) { .card-number-search { grid-template-columns: minmax(0, 1fr) minmax(100px, 1fr); }.card-number-search button { grid-column: 1/-1; }.top-pulls-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }.card-lookup-result .valued-card { grid-template-columns: 90px minmax(0, 1fr); gap: 12px; }.top-pulls-panel .section-heading { flex-wrap: wrap; }.top-pulls-panel .section-heading > .muted { max-width: none; text-align: left; } }
+
+/* A fixed board for the room's TV: tables and standings are always visible. */
+.tv-body { margin: 0; overflow: hidden; }
+.tv-screen { height: 100vh; height: 100dvh; padding: 2vh 2.5vw; display: flex; flex-direction: column; gap: 1.5vh; }
+.tv-toolbar,.tv-controls,.tv-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tv-toolbar { flex: none; }
+.tv-brand { font-size: 23px; font-weight: 700; white-space: nowrap; }
+.tv-brand span { color: var(--arena-green); margin-left: 8px; }
+.tv-toolbar > p,.tv-footer { color: var(--arena-muted); font-size: 13px; }
+.tv-toolbar .tv-offline { color: #ffc780; }
+.tv-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr); gap: 1.5vw; }
+.tv-with-music .tv-layout { grid-template-columns: minmax(0,1fr) minmax(300px,26vw); }
+.tv-board { min-height: 0; display: flex; flex-direction: column; gap: 1.5vh; min-width: 0; }
+.tv-event { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.tv-event h1 { font-size: clamp(24px,2.5vw,48px); margin-bottom: 0; }
+.tv-event .eyebrow { margin-bottom: 6px; font-size: clamp(10px,.8vw,16px); }
+.tv-round-label { text-align: right; font-size: clamp(16px,1.4vw,28px); color: var(--arena-green); flex-shrink: 0; }
+.tv-round-label small { display: block; font-size: 13px; color: var(--arena-muted); }
+.tv-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); gap: 1.5vw; }
+.tv-panel { border: 1px solid var(--arena-line); border-radius: 18px; padding: clamp(12px,1.2vw,24px); background: #151521; min-width: 0; min-height: 0; }
+.tv-standings,.tv-tables { display: grid; grid-template-rows: auto minmax(0,1fr); gap: 12px; }
+.tv-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--arena-line); padding-bottom: 10px; }
+.tv-panel-heading h2 { font-size: clamp(18px,1.5vw,30px); }
+.tv-panel-heading > span { color: var(--arena-muted); font-size: clamp(11px,.9vw,18px); }
+.tv-fit { min-height: 0; overflow: hidden; }
+.tv-fit-content { transform-origin: top center; }
+.tv-standing { display: grid; grid-template-columns: 2em minmax(0,1fr) 2em; gap: 10px; align-items: center; border-bottom: 1px solid #303047; padding: .65em 0; font-size: clamp(18px,1.65vw,32px); overflow-wrap: anywhere; }
+.tv-standing b { text-align: right; color: var(--arena-green); font-variant-numeric: tabular-nums; }
+.tv-place { color: var(--arena-muted); }
+.tv-standing:first-child .tv-place { color: var(--arena-green); }
+.tv-match-list { display: grid; gap: 12px; }
+.tv-match { background: #202033; border: 1px solid #39354b; border-radius: 12px; padding: .65em .8em; font-size: clamp(17px,1.4vw,28px); }
+.tv-match-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: .45em; font-size: .7em; color: var(--arena-muted); }
+.tv-match-heading > span { font-variant-numeric: tabular-nums; }
+.tv-match.is-complete { border-color: #526735; }
+.tv-match.is-complete .tv-match-heading > span { color: var(--arena-green); }
+.tv-duel { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; }
+.tv-duel strong { overflow-wrap: anywhere; }
+.tv-duel strong:last-child { text-align: right; }
+.tv-duel b { color: var(--arena-green); font-size: .85em; }
+.tv-seats { display: grid; gap: 5px; }
+.tv-seats > div { display: flex; justify-content: space-between; gap: 12px; overflow-wrap: anywhere; }
+.tv-seats b { color: var(--arena-green); white-space: nowrap; }
+.tv-expired { color: #ffc780; }
+.tv-empty,.tv-next { color: var(--arena-muted); padding: 16px 0; font-size: clamp(16px,1.2vw,24px); }
+.tv-winners { background: #c6fb651a; border: 1px solid #526735; color: var(--arena-green); border-radius: 12px; padding: 10px 20px; font-size: clamp(18px,1.6vw,32px); overflow-wrap: anywhere; }
+.tv-winners span { font-size: .7em; }
+.tv-music { overflow: auto; }
+.tv-music[hidden] { display: none; }
+.tv-music h2 { margin-bottom: 16px; }
+.tv-music label { font-size: 14px; }
+.tv-music .muted { margin: 12px 0; }
+.tv-music iframe { display: block; border: 0; width: 100%; aspect-ratio: 16/9; min-height: 200px; }
+.tv-footer { flex: none; font-size: 12px; }
+@media (max-width: 900px) {
+    .tv-body { overflow: auto; }
+    .tv-screen { height: auto; min-height: 100vh; }
+    .tv-layout,.tv-with-music .tv-layout { display: flex; flex-direction: column; }
+    .tv-board { min-height: 70vh; }
+    .tv-fit { overflow: visible; }
+    .tv-toolbar { flex-wrap: wrap; }
+    .tv-toolbar > p { order: 3; width: 100%; }
+    .tv-event { align-items: start; }
+    .tv-event .eyebrow { max-width: 45vw; }
+}

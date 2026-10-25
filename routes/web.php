@@ -3,6 +3,7 @@
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\SetCardController;
 use App\Http\Controllers\SetVisualController;
+use App\Http\Controllers\TournamentTvController;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
 Route::view('/', 'welcome')->name('home');
+Route::get('/tv', [TournamentTvController::class, 'latest'])->name('tv');
+Route::get('/tv/state', [TournamentTvController::class, 'latestState'])->name('tv.state');
 Route::get('/set-cards/{code}/top', [SetCardController::class, 'topPulls'])->where('code', '[a-z0-9]{2,10}')->middleware('throttle:30,1')->name('set.top-pulls');
 Route::get('/set-cards/{code}/lookup', [SetCardController::class, 'lookup'])->where('code', '[a-z0-9]{2,10}')->middleware('throttle:60,1')->name('set.card-lookup');
 Route::get('/set-visuals/{code}/artwork', [SetVisualController::class, 'artwork'])->where('code', '[a-z0-9]{2,10}')->middleware('throttle:120,1')->name('set.artwork');
@@ -19,6 +22,8 @@ Route::get('/set-visuals/{code}/symbol', [SetVisualController::class, 'symbol'])
 Route::get('/join', [ParticipantController::class, 'open'])->middleware('throttle:30,1')->name('play.open');
 
 Route::get('/play/{tournament:invite_token}', Tournament::class)->name('play');
+Route::get('/play/{tournament:invite_token}/tv', [TournamentTvController::class, 'show'])->name('play.tv');
+Route::get('/play/{tournament:invite_token}/tv/state', [TournamentTvController::class, 'state'])->name('play.tv.state');
 Route::post('/play/{tournament:invite_token}/join', [ParticipantController::class, 'join'])->middleware('throttle:10,1')->name('play.join');
 Route::view('/return', 'participant-return')->name('play.return');
 Route::post('/return', [ParticipantController::class, 'recover'])->middleware('throttle:10,1')->name('play.recover');
