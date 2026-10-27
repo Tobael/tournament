@@ -33,9 +33,8 @@ export function setupTournamentTv() {
     const music = screen.querySelector('#tv-music');
     const toggle = screen.querySelector('[data-tv-music-toggle]');
     const player = screen.querySelector('[data-tv-player]');
-    const input = screen.querySelector('#tv-youtube');
     const message = screen.querySelector('[data-tv-music-message]');
-    const storageKey = `spielrunde.tv.music.${screen.dataset.event}`;
+    let musicRevision;
     const automatic = screen.dataset.automatic === '1';
     let clockOffset = Number(screen.dataset.serverTime) - Date.now();
     let closed = screen.dataset.closed === '1';
@@ -81,7 +80,7 @@ export function setupTournamentTv() {
         }
     }
     async function refresh() {
-        if ((closed && !automatic) || refreshing || stopped) return;
+        if (refreshing || stopped) return;
         clearTimeout(refreshTimer);
         refreshing = true;
         request = new AbortController();
@@ -94,6 +93,7 @@ export function setupTournamentTv() {
             if (stopped) return;
             clockOffset = data.serverTime - Date.now();
             update(data.html);
+            syncMusic(data.music);
             closed = data.closed;
             if (data.title) document.title = data.title;
             if (data.playUrl) screen.querySelector('[data-tv-event-link]').href = data.playUrl;
@@ -108,7 +108,7 @@ export function setupTournamentTv() {
         } finally {
             clearTimeout(timeout);
             refreshing = false;
-            if ((!closed || automatic) && !stopped) refreshTimer = setTimeout(refresh, 10000);
+            if (!stopped) refreshTimer = setTimeout(refresh, 10000);
         }
     }
     async function keepAwake() {
@@ -122,31 +122,32 @@ export function setupTournamentTv() {
         music.hidden = !music.hidden;
         toggle.setAttribute('aria-expanded', String(!music.hidden));
         screen.classList.toggle('tv-with-music', !music.hidden);
-        if (music.hidden) player.replaceChildren();
         fit();
     });
-    try { input.value = window.localStorage.getItem(storageKey) || ''; } catch { /* Optional storage. */ }
-    screen.querySelector('[data-tv-music-form]').addEventListener('submit', event => {
-        event.preventDefault();
-        const src = youtubeEmbed(input.value.trim());
-        if (!src) {
-            message.textContent = 'Bitte einen gültigen YouTube-Link zu einem Video oder einer Playlist einfügen.';
-            return;
-        }
-        const iframe = document.createElement('iframe');
-        iframe.src = src;
-        iframe.title = 'YouTube · Musik für den Spielabend';
-        iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
-        iframe.allowFullscreen = true;
-        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-        player.replaceChildren(iframe);
-        message.textContent = 'Im Player auf Play drücken. Falls das Video nicht eingebettet werden kann, bitte einen anderen Link wählen.';
-        try { window.localStorage.setItem(storageKey, input.value.trim()); } catch { /* Playback works without storage. */ }
-    });
-    screen.querySelector('[data-tv-music-stop]').addEventListener('click', () => {
+    function syncMusic(state) {
+        if (!state || musicRevision === state.revision) return;
+        musicRevision = state.revision;
         player.replaceChildren();
-        message.textContent = 'Musik gestoppt. Mit Laden kannst du sie erneut öffnen.';
-    });
+        const src = state.url && youtubeEmbed(state.url);
+        if (!src) {
+            message.textContent = 'Musik gestoppt. Teilnehmende können am Handy einen YouTube-Link senden.';
+            music.hidden = true;
+        } else {
+            const iframe = document.createElement('iframe');
+            iframe.src = `${src}&autoplay=1`;
+            iframe.title = 'YouTube · Musik für den Spielabend';
+            iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+            iframe.allowFullscreen = true;
+            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+            player.replaceChildren(iframe);
+            message.textContent = 'Vom Handy gesendet. Falls kein Ton startet, einmal im Player auf Play drücken.';
+            music.hidden = false;
+        }
+        toggle.setAttribute('aria-expanded', String(!music.hidden));
+        screen.classList.toggle('tv-with-music', !music.hidden);
+        fit();
+    }
+    try { syncMusic(JSON.parse(screen.dataset.music)); } catch { /* Polling retries the shared state. */ }
     const fullscreen = screen.querySelector('[data-tv-fullscreen]');
     fullscreen.hidden = !document.documentElement.requestFullscreen;
     fullscreen.addEventListener('click', async () => {
@@ -172,7 +173,7 @@ export function setupTournamentTv() {
     fit();
     void keepAwake();
     const clockTimer = setInterval(tick, 1000);
-    if (!closed || automatic) refreshTimer = setTimeout(refresh, 10000);
+    refreshTimer = setTimeout(refresh, 10000);
     window.addEventListener('pagehide', () => {
         stopped = true;
         clearTimeout(refreshTimer);

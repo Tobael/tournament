@@ -22,6 +22,12 @@ class Tournament extends Model
         static::creating(fn ($tournament) => $tournament->invite_token = (string) Str::uuid());
     }
 
+    public static function forTv(): ?self
+    {
+        return static::query()->where('status', Status::IN_PROGRESS)->latest()->orderByDesc('id')->first()
+            ?? static::query()->latest()->orderByDesc('id')->first();
+    }
+
     public function participant(): ?TournamentUser
     {
         // A recovered event identity is independent of the organizer login.

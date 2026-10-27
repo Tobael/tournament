@@ -7,7 +7,9 @@ use App\Enums\Status;
 use App\Models\RoundMatch;
 use App\Services\CommanderTournamentService;
 use App\Services\SwissTournamentService;
+use App\Services\TvMusic;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -15,6 +17,26 @@ use Livewire\Component;
 class Tournament extends Component
 {
     public \App\Models\Tournament $tournament;
+
+    public string $tvYoutube = '';
+
+    public function controlTvMusic(bool $stop = false): void
+    {
+        $this->tournament->refresh();
+        abort_unless($this->tournament->participant() && \App\Models\Tournament::forTv()?->id === $this->tournament->id, 403);
+        $url = null;
+        if (! $stop) {
+            $this->validate(['tvYoutube' => ['required', 'string', 'max:500']]);
+            $url = TvMusic::embed(trim($this->tvYoutube));
+            if (! $url) {
+                $this->addError('tvYoutube', 'Bitte einen gültigen YouTube-Link zu einem Video oder einer Playlist einfügen.');
+
+                return;
+            }
+        }
+        $this->tournament->forceFill(['tv_youtube_url' => $url, 'tv_music_revision' => (string) Str::uuid()])->save();
+        session()->flash('tv-music-status', $stop ? 'Musik auf dem TV gestoppt.' : 'An den TV gesendet. Die Wiedergabe startet innerhalb von 10 Sekunden.');
+    }
 
     public bool $hideNextRoundButton = false;
 

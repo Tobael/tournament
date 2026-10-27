@@ -5,6 +5,7 @@ use App\Enums\Status;
 use App\Models\Group;
 use App\Models\Tournament;
 use App\Models\User;
+use Livewire\Livewire;
 
 function tvEvent(string $format = 'sealed'): array
 {
@@ -18,7 +19,7 @@ test('the TV page is public through the invitation and contains no participation
     [$event] = tvEvent();
     $this->get(route('play', $event->invite_token))->assertSee(route('tv'), false);
     $this->get(route('play.tv', $event->invite_token))->assertOk()->assertHeader('Cache-Control', 'no-store, private')
-        ->assertSee('Anmeldung läuft')->assertSee('Alex')->assertSee('data-tv-music-form', false)
+        ->assertSee('Anmeldung läuft')->assertSee('Alex')->assertDontSee('data-tv-music-form', false)->assertSee('Musik am Handy')
         ->assertSee('strict-origin-when-cross-origin')->assertDontSee('wire:click')->assertDontSee('data-device-participant');
     $this->get('/play/not-a-token/tv')->assertNotFound();
     $this->get('/play/not-a-token/tv/state')->assertNotFound();
@@ -90,4 +91,47 @@ test('automatic TV breaks matching creation timestamps by newest ID and ignores 
     $first->update(['name' => 'Future scheduled event', 'created_at' => now(), 'scheduled_on' => now()->addMonth()->format('Y-m-d')]);
     $last->update(['name' => 'Newest created event', 'created_at' => $first->created_at, 'scheduled_on' => now()->subMonth()->format('Y-m-d')]);
     $this->getJson(route('tv.state'))->assertJsonPath('playUrl', route('play', $last->invite_token));
+});
+
+test('participants send shared TV music from their phone and can stop or replay the same link', function () {
+    [$event, $players] = tvEvent();
+    $this->actingAs($players[0]->user);
+    $this->get(route('play', $event->invite_token))->assertSee('TV-Musik steuern');
+    $remote = Livewire::test(App\Livewire\Tournament::class, ['tournament' => $event])
+        ->set('tvYoutube', 'https://youtu.be/dQw4w9WgXcQ')->call('controlTvMusic')->assertHasNoErrors();
+    $revision = $event->fresh()->tv_music_revision;
+    $this->getJson(route('tv.state'))->assertJsonPath('music.url', 'https://www.youtube.com/embed/dQw4w9WgXcQ?playsinline=1')
+        ->assertJsonPath('music.revision', $revision);
+    $this->get(route('tv'))->assertSee('data-music=', false)->assertSee($revision);
+    $remote->call('controlTvMusic');
+    expect($event->fresh()->tv_music_revision)->not->toBe($revision);
+    $remote->call('controlTvMusic', true);
+    $this->getJson(route('tv.state'))->assertJsonPath('music.url', null);
+});
+
+test('TV music accepts recovered participants and rejects observers and participants of older tournaments', function () {
+    [$old, $oldPlayers] = tvEvent();
+    [$event, $players] = tvEvent();
+    Livewire::test(App\Livewire\Tournament::class, ['tournament' => $event])->call('controlTvMusic', true)->assertForbidden();
+    $this->actingAs($oldPlayers[0]->user);
+    Livewire::test(App\Livewire\Tournament::class, ['tournament' => $old])->call('controlTvMusic', true)->assertForbidden();
+    auth()->logout();
+    $players[0]->forceFill(['recovery_hash' => hash('sha256', 'phone-token')])->save();
+    $this->withSession(['participants.'.$event->id => ['id' => $players[0]->id, 'token' => 'phone-token']]);
+    Livewire::test(App\Livewire\Tournament::class, ['tournament' => $event])
+        ->set('tvYoutube', 'https://youtube.com/playlist?list=PL1234567890_abcd')->call('controlTvMusic')->assertHasNoErrors();
+    expect($event->fresh()->tv_youtube_url)->toContain('videoseries?list=PL1234567890_abcd');
+    // Selection changes revoke the old phone's control immediately.
+    tvEvent();
+    Livewire::test(App\Livewire\Tournament::class, ['tournament' => $event])->call('controlTvMusic', true)->assertForbidden();
+});
+
+test('invalid music destinations cannot replace the shared player', function () {
+    [$event, $players] = tvEvent();
+    $this->actingAs($players[0]->user);
+    foreach (['javascript:alert(1)', 'https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ', 'https://youtube.com/watch?v[]=bad', 'https://youtube.com:8443/watch?v=dQw4w9WgXcQ'] as $link) {
+        Livewire::test(App\Livewire\Tournament::class, ['tournament' => $event])
+            ->set('tvYoutube', $link)->call('controlTvMusic')->assertHasErrors('tvYoutube');
+    }
+    expect($event->fresh()->tv_youtube_url)->toBeNull();
 });

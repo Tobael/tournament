@@ -9,8 +9,7 @@ class TournamentTvController extends Controller
 {
     private function latestTournament(): ?Tournament
     {
-        return Tournament::query()->where('status', Status::IN_PROGRESS)->latest()->orderByDesc('id')->first()
-            ?? Tournament::query()->latest()->orderByDesc('id')->first();
+        return Tournament::forTv();
     }
 
     public function latest()
@@ -56,6 +55,7 @@ class TournamentTvController extends Controller
             'closed' => $tournament?->status === Status::CLOSED,
             'title' => ($tournament?->name ?? 'Spielrunde').' · TV · Spielrunde',
             'playUrl' => $tournament ? route('play', $tournament->invite_token) : route('home', ['home' => 1]),
+            'music' => ['url' => $tournament?->tv_youtube_url, 'revision' => $tournament?->tv_music_revision],
             'serverTime' => now()->getTimestampMs(),
         ])->header('Cache-Control', 'no-store');
     }

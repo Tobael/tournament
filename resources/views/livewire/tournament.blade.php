@@ -43,6 +43,7 @@
     @if(!$participant && $tournament->status === Status::OPEN)<a href="#join">Mitspielen</a>@endif
     <a href="#standings">Tabelle</a>
     <a href="{{ route('tv') }}">TV-Modus ↗</a>
+    @if($participant && \App\Models\Tournament::forTv()?->id === $tournament->id)<a href="#tv-remote">TV-Musik steuern</a>@endif
     @if($tournament->format === 'sealed' && $tournament->set_code)<a href="#set-cards">Karten</a>@endif
     @if($currentRound)<a href="#rounds">Runden</a>@endif
     @if($isOrganizer)<a href="#organization">Organisation</a>@endif
@@ -114,6 +115,21 @@
         @if($deviceToken)
             <details class="recovery-panel" wire:ignore><summary>Deinen privaten Rückkehr-Link sichern</summary><p class="muted">Speichere diesen Link als Lesezeichen. Wer ihn hat, kann unter deinem Namen Ergebnisse melden. Teile ihn nicht mit der Runde.</p><x-share-link :url="route('play.return').'#'.$deviceToken" label="Privater Rückkehr-Link" /></details>
         @endif
+    @endif
+
+    @if($participant && \App\Models\Tournament::forTv()?->id === $tournament->id)
+        <section id="tv-remote" class="event-card">
+            <p class="eyebrow">FERNBEDIENUNG</p>
+            <h2>Musik auf dem TV</h2>
+            <p class="muted">Alle Teilnehmenden dieses Turniers können die Musik steuern. YouTube-Link am Handy einfügen und auf dem TV abspielen.</p>
+            <form wire:submit="controlTvMusic" class="join-form">
+                <flux:input wire:model="tvYoutube" type="url" label="YouTube-Video oder Playlist" placeholder="https://www.youtube.com/watch?v=…" required maxlength="500" />
+                <flux:button type="submit" variant="primary" wire:loading.attr="disabled">Auf TV abspielen</flux:button>
+            </form>
+            <flux:button type="button" wire:click="controlTvMusic(true)" wire:loading.attr="disabled">Musik stoppen</flux:button>
+            @if(session('tv-music-status'))<p role="status">{{ session('tv-music-status') }}</p>@endif
+            <p class="muted">Änderungen erscheinen innerhalb von 10 Sekunden. Falls der Browser Ton blockiert, einmal am TV auf Play drücken. Manche Videos erlauben keine Einbettung.</p>
+        </section>
     @endif
 
     @if($isOrganizer)
