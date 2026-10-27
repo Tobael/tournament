@@ -9,9 +9,20 @@
         $deviceToken = '';
     }
     $isOrganizer = auth()->user()?->is_admin;
+    $canControlTv = $participant && \App\Models\Tournament::forTv()?->id === $tournament->id;
     $isCommander = $tournament->format === 'commander';
 @endphp
-<div class="tournament-page" @if($tournament->status !== Status::CLOSED) wire:poll.10s="refresh" @endif>
+<div class="tournament-page" x-data="{
+    tab: 'spiel',
+    followHash(hash) {
+        if (!hash) return;
+        if (hash === '#standings') this.tab = 'tabelle';
+        else if (hash === '#rounds' || hash.startsWith('#match-')) this.tab = 'runden';
+        else if (['#tv-remote', '#set-cards', '#organization', '#recovery'].includes(hash)) this.tab = 'mehr';
+        else if (['#my-match', '#join'].includes(hash)) this.tab = 'spiel';
+        this.$nextTick(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' }));
+    }
+}" x-init="followHash(window.location.hash)" @hashchange.window="followHash(window.location.hash)" @click="followHash($event.target.closest('a')?.hash)" @if($tournament->status !== Status::CLOSED) wire:poll.10s="refresh" @endif>
     <div data-device-participant data-invite="{{ $tournament->invite_token }}" data-title="{{ $tournament->name }}" data-name="{{ $participant?->user->name }}" data-token="{{ $deviceToken }}" data-participating="{{ $participant ? '1' : '0' }}" data-active="{{ $tournament->status !== Status::CLOSED ? '1' : '0' }}">
         <p class="muted" data-device-message role="status"></p>
     </div>
@@ -38,16 +49,16 @@
         <x-winner-celebration :tournament="$tournament" />
     @endif
 
-    <nav class="event-navigation" aria-label="Im Turnier">
-        @if($participant)<a href="#my-match">Mein Spiel</a>@endif
-    @if(!$participant && $tournament->status === Status::OPEN)<a href="#join">Mitspielen</a>@endif
-    <a href="#standings">Tabelle</a>
-    <a href="{{ route('tv') }}">TV-Modus ↗</a>
-    @if($participant && \App\Models\Tournament::forTv()?->id === $tournament->id)<a href="#tv-remote">TV-Musik steuern</a>@endif
-    @if($tournament->format === 'sealed' && $tournament->set_code)<a href="#set-cards">Karten</a>@endif
-    @if($currentRound)<a href="#rounds">Runden</a>@endif
-    @if($isOrganizer)<a href="#organization">Organisation</a>@endif
-</nav>
+    <nav class="event-navigation" role="tablist" aria-label="Im Turnier"
+        @keydown.arrow-right.prevent="const tabs = [...$el.querySelectorAll('[role=tab]')]; const next = tabs[(tabs.indexOf(document.activeElement) + 1) % tabs.length]; next.focus(); next.click()"
+        @keydown.arrow-left.prevent="const tabs = [...$el.querySelectorAll('[role=tab]')]; const next = tabs[(tabs.indexOf(document.activeElement) + tabs.length - 1) % tabs.length]; next.focus(); next.click()"
+        @keydown.home.prevent="$el.firstElementChild.focus(); $el.firstElementChild.click()"
+        @keydown.end.prevent="$el.lastElementChild.focus(); $el.lastElementChild.click()">
+        @foreach(['spiel' => 'Spiel', 'tabelle' => 'Tabelle', 'runden' => 'Runden', 'mehr' => 'Mehr'] as $tab => $label)
+            <button type="button" role="tab" id="tab-{{ $tab }}" aria-controls="panel-{{ $tab }}" :aria-selected="tab === '{{ $tab }}'" :tabindex="tab === '{{ $tab }}' ? 0 : -1" @click="tab = '{{ $tab }}'">{{ $label }}</button>
+        @endforeach
+    </nav>
+    <div id="panel-spiel" class="event-tab-panel" role="tabpanel" aria-labelledby="tab-spiel" x-show="tab === 'spiel'">
     @if(!$participant && $tournament->status === Status::OPEN)
         <section id="join" class="join-card">
             <p class="eyebrow">DU BIST DRAN</p><h2>{{ $isOrganizer ? 'Organisieren und mitspielen.' : 'Mitspielen. Ohne Passwort.' }}</h2>
@@ -112,15 +123,18 @@
                 <h2>Danke fürs Mitspielen.</h2>
             @endif
         </section>
-        @if($deviceToken)
-            <details class="recovery-panel" wire:ignore><summary>Deinen privaten Rückkehr-Link sichern</summary><p class="muted">Speichere diesen Link als Lesezeichen. Wer ihn hat, kann unter deinem Namen Ergebnisse melden. Teile ihn nicht mit der Runde.</p><x-share-link :url="route('play.return').'#'.$deviceToken" label="Privater Rückkehr-Link" /></details>
-        @endif
+
     @endif
 
-    @if($participant && \App\Models\Tournament::forTv()?->id === $tournament->id)
-        <section id="tv-remote" class="event-card">
-            <p class="eyebrow">FERNBEDIENUNG</p>
-            <h2>Musik auf dem TV</h2>
+    </div>
+    <div id="panel-mehr" class="event-tab-panel event-extras" role="tabpanel" aria-labelledby="tab-mehr" x-show="tab === 'mehr'" x-cloak>
+        @if($participant && $deviceToken)
+            <details id="recovery" class="recovery-panel" wire:ignore.self><summary>Deinen privaten Rückkehr-Link sichern</summary><p class="muted">Speichere diesen Link als Lesezeichen. Wer ihn hat, kann unter deinem Namen Ergebnisse melden. Teile ihn nicht mit der Runde.</p><x-share-link :url="route('play.return').'#'.$deviceToken" label="Privater Rückkehr-Link" /></details>
+        @endif
+    @if($canControlTv)
+        <details id="tv-remote" class="event-card music-remote" wire:ignore.self>
+            <summary>TV-Musik steuern <span class="muted">YouTube</span></summary>
+            <div class="music-remote-content">
             <p class="muted">Alle Teilnehmenden dieses Turniers können die Musik steuern. YouTube-Link am Handy einfügen und auf dem TV abspielen.</p>
             <form wire:submit="controlTvMusic" class="join-form">
                 <flux:input wire:model="tvYoutube" type="url" label="YouTube-Video oder Playlist" placeholder="https://www.youtube.com/watch?v=…" required maxlength="500" />
@@ -129,7 +143,8 @@
             <flux:button type="button" wire:click="controlTvMusic(true)" wire:loading.attr="disabled">Musik stoppen</flux:button>
             @if(session('tv-music-status'))<p role="status">{{ session('tv-music-status') }}</p>@endif
             <p class="muted">Änderungen erscheinen innerhalb von 10 Sekunden. Falls der Browser Ton blockiert, einmal am TV auf Play drücken. Manche Videos erlauben keine Einbettung.</p>
-        </section>
+            </div>
+        </details>
     @endif
 
     @if($isOrganizer)
@@ -171,10 +186,17 @@
         <x-set-card-tools :code="$tournament->set_code" :name="$tournament->set_name" />
     @endif
 
+        @if(!$participant && !$isOrganizer && !($tournament->format === 'sealed' && $tournament->set_code))
+            <p class="muted">Hier findest du als Teilnehmer deinen Rückkehr-Link und die Musiksteuerung.</p>
+        @endif
+    </div>
+    <div id="panel-tabelle" class="event-tab-panel" role="tabpanel" aria-labelledby="tab-tabelle" x-show="tab === 'tabelle'" x-cloak>
     <section id="standings" class="results-section">
         <div class="section-heading"><h2>{{ $tournament->status === Status::CLOSED ? 'Endstand' : 'Tabelle' }}</h2><span class="muted">{{ $tournament->status === Status::CLOSED ? 'Turnier beendet' : 'Wird automatisch aktualisiert' }}</span></div>
         <x-standings :tournament="$tournament" />
     </section>
+    </div>
+    <div id="panel-runden" class="event-tab-panel" role="tabpanel" aria-labelledby="tab-runden" x-show="tab === 'runden'" x-cloak>
     @if($currentRound)
         <section id="rounds" class="results-section"><h2>Runden & Ergebnisse</h2>
         @foreach($tournament->rounds->sortByDesc('round') as $round)
@@ -196,6 +218,8 @@
         @endforeach
         </section>
     @endif
+        @if(!$currentRound)<p class="notice">Noch keine Runde gestartet. Sobald es losgeht, erscheinen die Paarungen hier.</p>@endif
+    </div>
     <flux:modal name="finish-tournament"><div class="space-y-6"><flux:heading size="lg">Turnier beenden?</flux:heading><p>{{ $currentRound && !$currentRound->isCompleted() ? 'Achtung: Es fehlen noch Ergebnisse in der aktuellen Runde.' : 'Die Tabelle wird als Endstand gespeichert.' }}</p><flux:button variant="danger" wire:click="finishTournament">Jetzt beenden</flux:button></div></flux:modal>
     <flux:modal name="no-more-matches"><div class="space-y-6"><flux:heading size="lg">Keine weiteren Paarungen</flux:heading><p>Es konnten keine neuen Paarungen für alle Teilnehmenden gefunden werden. Du kannst das Turnier beenden.</p></div></flux:modal>
 </div>

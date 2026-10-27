@@ -17,7 +17,7 @@ function tvEvent(string $format = 'sealed'): array
 
 test('the TV page is public through the invitation and contains no participation or organizer controls', function () {
     [$event] = tvEvent();
-    $this->get(route('play', $event->invite_token))->assertSee(route('tv'), false);
+    $this->get(route('play', $event->invite_token))->assertDontSee('href="'.route('tv').'"', false);
     $this->get(route('play.tv', $event->invite_token))->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertSee('Anmeldung läuft')->assertSee('Alex')->assertDontSee('data-tv-music-form', false)->assertSee('Musik am Handy')
         ->assertSee('strict-origin-when-cross-origin')->assertDontSee('wire:click')->assertDontSee('data-device-participant');
@@ -57,7 +57,7 @@ test('commander TV tables show every seat and the recorded points and escape pla
 test('the permanent TV address waits for the first tournament and links from the homepage', function () {
     $this->get(route('tv'))->assertOk()->assertSee('Noch kein Turnier vorhanden')->assertSee('data-automatic="1"', false);
     $this->getJson(route('tv.state'))->assertOk()->assertJsonPath('closed', false)->assertJsonPath('playUrl', route('home', ['home' => 1]));
-    $this->get(route('home'))->assertSee(route('tv'), false);
+    $this->get(route('home'))->assertDontSee('href="'.route('tv').'"', false);
     [$event] = tvEvent();
     $this->getJson(route('tv.state'))->assertJsonPath('playUrl', route('play', $event->invite_token));
 });

@@ -294,3 +294,48 @@ h1 { font-weight: 700; letter-spacing: -1.6px; }
     .tv-event { align-items: start; }
     .tv-event .eyebrow { max-width: 45vw; }
 }
+
+/* Four short tabs fit narrow cover displays without crowding the game controls. */
+.event-navigation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.event-navigation [role="tab"] { min-width: 0; min-height: 44px; padding: 10px 6px; border-radius: 10px; color: #c7bedb; font-size: 13px; font-weight: 600; cursor: pointer; }
+.event-navigation [role="tab"]:hover { background: #29213b; }
+.event-navigation [role="tab"][aria-selected="true"] { background: #c6fb6517; color: #d3ff97; box-shadow: inset 0 -2px #c6fb65; }
+.event-tab-panel { min-width: 0; }
+.event-tab-panel > .results-section { margin-top: 0; }
+.event-extras { display: flex; flex-direction: column; gap: 20px; }
+.event-extras > * { margin: 0; }
+.music-remote { padding-top: 8px; padding-bottom: 8px; }
+.music-remote > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
+.music-remote > summary::after { content: '+'; color: #c6fb65; font-size: 22px; }
+.music-remote[open] > summary::after { content: '−'; }
+.music-remote > summary .muted { margin-left: auto; font-size: 12px; font-weight: 400; }
+.music-remote-content { border-top: 1px solid var(--arena-line); padding: 16px 0 12px; }
+.event-extras .recovery-panel > .muted { margin: 12px 0; }
+@media (max-width: 380px) {
+    .arena-header { padding: 12px; flex-wrap: wrap; }
+    .arena-brand { font-size: 18px; gap: 8px; }
+    .brand-mark { width: 32px; height: 32px; flex-shrink: 0; }
+    .arena-nav { flex-wrap: wrap; gap: 8px 12px; }
+    .arena-main { padding: 20px 12px calc(100px + env(safe-area-inset-bottom)); }
+    .page-intro { padding-bottom: 20px; }
+    .page-intro .eyebrow { letter-spacing: 1px; overflow-wrap: anywhere; }
+    .join-card, .my-match, .event-card, .recovery-panel { padding: 16px 12px; }
+    .my-match h2 { font-size: 23px; }
+    .event-navigation { gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+    .event-navigation [role="tab"] { font-size: 12px; }
+    .event-extras { gap: 16px; }
+    .music-remote { padding-top: 4px; padding-bottom: 4px; }
+    .section-heading { flex-wrap: wrap; align-items: flex-start; }
+    .section-heading > .muted { max-width: none; text-align: left; }
+    .standing-row { grid-template-columns: 28px minmax(0, 1fr) 42px; gap: 8px; padding-left: 0; padding-right: 0; }
+    .match-row { grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr); gap: 8px; font-size: 13px; }
+    .card-number-search { grid-template-columns: minmax(0, 1fr); }
+    .card-number-search input, .card-number-search select { min-width: 0; }
+    .card-actions, .share-actions { flex-direction: column; }
+    .share-actions > *, .join-form [data-flux-button], .music-remote-content > [data-flux-button] { width: 100%; }
+    .arena-body [data-flux-button] { max-width: 100%; height: auto; white-space: normal; overflow-wrap: anywhere; }
+    .recovery-action { flex-wrap: wrap; }
+    .winner-celebration { padding: 24px 12px 0; }
+    .winner-podium { gap: 6px; }
+    .podium-place { padding-left: 6px; padding-right: 6px; }
+}

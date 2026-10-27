@@ -190,7 +190,7 @@ test('an organizer can join, manage and play the same tournament without changin
     $this->post(route('play.join', $event->invite_token))->assertRedirect();
     expect(session('participants.'.$event->id.'.token'))->toBe($token);
     expect($event->users()->count())->toBe(2);
-    $this->get(route('tournament', $event))->assertOk()->assertSee('Mein Spiel')->assertSee('Organisation');
+    $this->get(route('tournament', $event))->assertOk()->assertSee('id="tab-spiel"', false)->assertSee('Organisation');
     Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startNextRound')->assertOk();
     $match = $event->fresh()->currentRound()->matches()->first();
     Livewire::test(TournamentPage::class, ['tournament' => $event])->call('updateCurrentMatchForUser', RoundMatchResult::TWOONE->value)->assertOk();
