@@ -35,7 +35,7 @@ class Tournament extends Component
             }
         }
         $this->tournament->forceFill(['tv_youtube_url' => $url, 'tv_music_revision' => (string) Str::uuid()])->save();
-        session()->flash('tv-music-status', $stop ? 'Musik auf dem TV gestoppt.' : 'An den TV gesendet. Die Wiedergabe startet innerhalb von 10 Sekunden.');
+        session()->flash('tv-music-status', $stop ? 'Musik auf dem TV gestoppt.' : 'An den TV gesendet. Die Wiedergabe startet sofort bei bestehender Live-Verbindung.');
     }
 
     public bool $hideNextRoundButton = false;
@@ -139,19 +139,6 @@ class Tournament extends Component
     {
         $match = $this->reportingTable($matchId);
         $this->saveCommanderScores($match, $match->players->mapWithKeys(fn ($player) => [$player->id => 1])->all());
-    }
-
-    public function startMatchTimer(int $matchId, int $minutes = 50): void
-    {
-        $this->tournament->refresh();
-        abort_unless($this->tournament->status === Status::IN_PROGRESS, 422);
-        abort_unless(in_array($minutes, [25, 50, 60, 90], true), 422);
-        $match = $this->tournament->currentRound()?->matches()->whereKey($matchId)->first();
-        abort_unless($match && $match->player_b_id, 404);
-        // A shared deadline can only be set once, including concurrent starts.
-        $match->newQuery()->whereKey($match->id)->whereNull('result')->whereNull('commander_scores')->whereNull('timer_ends_at')
-            ->update(['timer_ends_at' => now()->addMinutes($minutes)]);
-        $this->tournament->refresh();
     }
 
     public function updateCurrentMatchForUser(RoundMatchResult $result): void

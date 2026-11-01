@@ -5,7 +5,7 @@
     <form class="card-number-search" data-card-search>
         <label>Set / Bonus-Sheet<select name="subset" data-card-subset><option value="{{ $code }}">{{ $name }} ({{ strtoupper($code) }})</option></select></label>
         <label>Kartennummer<input name="number" type="text" inputmode="text" placeholder="z. B. 0119" required maxlength="16" autocomplete="off" /></label>
-        <button type="submit" class="arena-button">Wert prüfen ↗</button>
+        <button type="submit" class="arena-button">Wert prüfen</button>
     </form>
     <p class="card-search-status muted" data-card-search-status role="status"></p>
     <div class="card-lookup-result" data-card-search-result aria-live="polite" hidden></div>

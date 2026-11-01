@@ -18,6 +18,7 @@ class RoundMatch extends Model
         'player_b_id',
         'timer_ends_at',
         'commander_scores',
+        'game_wins',
     ];
 
     protected function casts(): array
@@ -26,6 +27,9 @@ class RoundMatch extends Model
             'result' => RoundMatchResult::class,
             'timer_ends_at' => 'immutable_datetime',
             'commander_scores' => 'array',
+            'game_wins' => 'array',
+            'life_state' => 'array',
+            'life_revision' => 'integer',
         ];
     }
 

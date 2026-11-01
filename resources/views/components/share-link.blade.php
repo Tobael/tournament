@@ -4,7 +4,7 @@
     <div class="share-actions">
         <button type="button" class="utility-button" data-copy-link>Link kopieren</button>
         @if($share)
-            <button type="button" class="utility-button" data-share-link-button>Teilen ↗</button>
+            <button type="button" class="utility-button" data-share-link-button>Teilen</button>
         @endif
     </div>
     <p class="muted" role="status" aria-live="polite" data-copy-message></p>

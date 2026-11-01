@@ -22,16 +22,17 @@
         else if (['#my-match', '#join'].includes(hash)) this.tab = 'spiel';
         this.$nextTick(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' }));
     }
-}" x-init="followHash(window.location.hash)" @hashchange.window="followHash(window.location.hash)" @click="followHash($event.target.closest('a')?.hash)" @if($tournament->status !== Status::CLOSED) wire:poll.10s="refresh" @endif>
+}" x-init="followHash(window.location.hash)" @hashchange.window="followHash(window.location.hash)" @click="followHash($event.target.closest('a')?.hash)" data-round-realtime>
     <div data-device-participant data-invite="{{ $tournament->invite_token }}" data-title="{{ $tournament->name }}" data-name="{{ $participant?->user->name }}" data-token="{{ $deviceToken }}" data-participating="{{ $participant ? '1' : '0' }}" data-active="{{ $tournament->status !== Status::CLOSED ? '1' : '0' }}">
         <p class="muted" data-device-message role="status"></p>
     </div>
+    <p class="muted" data-round-connection role="status">Live-Verbindung wird aufgebaut …</p>
     <section class="page-intro">
         <x-set-visual :code="$tournament->format === 'sealed' ? $tournament->set_code : null" :name="$tournament->set_name" variant="background" :context="'background-'.$tournament->id">
         <p class="eyebrow">{{ $tournament->group->name }} · {{ $tournament->users->count() }} TEILNEHMENDE</p>
         <h1>{{ $tournament->name }}</h1>
         @if($tournament->scheduled_on)
-            <p class="event-date"><span aria-hidden="true">◷</span> <time datetime="{{ $tournament->scheduled_on->format('Y-m-d') }}">{{ $tournament->scheduled_on->format('d.m.Y') }}</time> · Euer Spielabend</p>
+            <p class="event-date"> <time datetime="{{ $tournament->scheduled_on->format('Y-m-d') }}">{{ $tournament->scheduled_on->format('d.m.Y') }}</time> · Euer Spielabend</p>
         @endif
         <p class="event-format">{{ match($tournament->format) { 'sealed' => 'Sealed', 'commander' => 'Commander', default => 'Constructed' } }}{{ $tournament->set_name ? ' · '.$tournament->set_name : '' }}</p>
         @if($isCommander)
@@ -70,7 +71,7 @@
                 @else
                     <flux:input name="name" label="Dein Anzeigename" :value="old('name')" required maxlength="80" autocomplete="nickname" placeholder="So nennen dich die anderen" />
                 @endauth
-                <flux:button type="submit" variant="primary">Ich bin dabei ↗</flux:button>
+                <flux:button type="submit" variant="primary">Ich bin dabei</flux:button>
             </form>
             <a class="text-link" href="{{ route('play.return') }}">Schon angemeldet? Mit Rückkehr-Link fortsetzen</a>
         </section>
@@ -78,6 +79,9 @@
         <p class="notice">Die Anmeldung ist geschlossen. Du kannst die Spiele und Tabelle hier verfolgen.</p>
     @endif
 
+    @if($myMatch && $myMatch->player_b_id)
+        <p class="life-counter-link"><a class="utility-button" href="{{ route('play.life', [$tournament->invite_token, $myMatch->id]) }}">Lebenszähler öffnen</a></p>
+    @endif
     @if($participant)
         <section id="my-match" class="my-match">
             <p class="eyebrow">DEIN SPIEL · {{ $participant->user->name }}</p>
@@ -88,7 +92,7 @@
                     <p class="recorded-score">{{ $myMatch->commander_scores[$participant->id] ?? 0 }} Punkte</p>
                     <p role="status">Ergebnis gespeichert. {{ $tournament->status === Status::CLOSED ? 'Das Turnier ist beendet.' : ($currentRound->round >= $tournament->round_limit ? 'Alle geplanten Runden sind gespielt.' : 'Die nächste Runde erscheint automatisch hier.') }}</p>
                 @else
-                    <a class="text-link" href="#match-{{ $myMatch->id }}">Zum Tisch · Timer & Ergebnis ↓</a>
+                    <a class="text-link" href="#match-{{ $myMatch->id }}">Tisch und Ergebnis</a>
                 @endif
             @elseif($myMatch)
                 @if(!$myMatch->player_b_id)
@@ -104,7 +108,6 @@
                         <p class="recorded-score">{{ ($isPlayerA ? $myMatch->result : $myMatch->result->reversed())->label() }}</p>
                         <p role="status">Ergebnis gespeichert. {{ $tournament->status === Status::CLOSED ? 'Das Turnier ist beendet.' : 'Die nächste Runde erscheint automatisch hier.' }}</p>
                     @elseif($tournament->status === Status::IN_PROGRESS)
-                        <p><a class="text-link" href="#match-{{ $myMatch->id }}">Zum Match-Timer ↓</a></p>
                         <p>Wie ist dein Match ausgegangen? Wähle das Ergebnis aus deiner Sicht.</p>
                         <div class="score-grid">
                             @foreach(RoundMatchResult::cases() as $result)
@@ -207,8 +210,9 @@
                         <x-commander-table :match="$match" :number="$loop->iteration" :active="$tournament->status === Status::IN_PROGRESS && $round->id === $currentRound->id" :can-report="$isOrganizer || ($participant && $match->players->contains('id', $participant->id))" />
                     @else
                     <div id="match-{{ $match->id }}" class="match-card">
-                    <div class="match-row"><span>{{ $match->playerA->user->name }}</span><strong>{{ $match->result === RoundMatchResult::DRAW ? 'Remis' : ($match->result?->value ?? 'vs.') }}</strong><span>{{ $match->playerB?->user->name ?? 'Freilos' }}</span></div>
+                    <div class="match-row"><span>{{ $match->playerA->user->name }}</span><strong>{{ $match->result === RoundMatchResult::DRAW ? 'Remis' : ($match->result?->value ?? ($match->game_wins ? ($match->game_wins[$match->player_a_id] ?? 0).'–'.($match->game_wins[$match->player_b_id] ?? 0) : 'vs.')) }}</strong><span>{{ $match->playerB?->user->name ?? 'Freilos' }}</span></div>
                     @if($tournament->status === Status::IN_PROGRESS && $round->id === $currentRound->id && $match->player_b_id && !$match->result)
+                        <p><a class="text-link" href="{{ route('play.life', [$tournament->invite_token, $match->id]) }}">Lebenszähler öffnen</a></p>
                         <x-match-timer :match="$match" />
                     @endif
                     </div>

@@ -1,3 +1,5 @@
+<meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}" />
+<meta name="reverb-port" content="{{ config('broadcasting.browser_port') }}" />
 <meta charset="utf-8" />
 <meta name="csrf-token" content="{{ csrf_token() }}" />
 <meta name="theme-color" content="#0b0b14" />

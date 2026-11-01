@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MatchLifeController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\SetCardController;
 use App\Http\Controllers\SetVisualController;
@@ -22,6 +23,9 @@ Route::get('/set-visuals/{code}/symbol', [SetVisualController::class, 'symbol'])
 Route::get('/join', [ParticipantController::class, 'open'])->middleware('throttle:30,1')->name('play.open');
 
 Route::get('/play/{tournament:invite_token}', Tournament::class)->name('play');
+Route::get('/play/{tournament:invite_token}/life/{match}', [MatchLifeController::class, 'show'])->whereNumber('match')->name('play.life');
+Route::get('/play/{tournament:invite_token}/life/{match}/state', [MatchLifeController::class, 'state'])->whereNumber('match')->name('play.life.state');
+Route::post('/play/{tournament:invite_token}/life/{match}', [MatchLifeController::class, 'update'])->whereNumber('match')->middleware('throttle:240,1')->name('play.life.update');
 Route::get('/play/{tournament:invite_token}/tv', [TournamentTvController::class, 'show'])->name('play.tv');
 Route::get('/play/{tournament:invite_token}/tv/state', [TournamentTvController::class, 'state'])->name('play.tv.state');
 Route::post('/play/{tournament:invite_token}/join', [ParticipantController::class, 'join'])->middleware('throttle:10,1')->name('play.join');

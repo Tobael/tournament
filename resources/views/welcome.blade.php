@@ -11,12 +11,12 @@
             <p class="muted">Öffne den Event-Link deiner Organisation oder füge ihn hier ein. Dann brauchst du nur noch deinen Namen.</p>
             <form method="GET" action="{{ route('play.open') }}" class="join-form">
                 <flux:input name="invite" label="Event-Link oder Einladungscode" :value="old('invite')" required maxlength="500" placeholder="https://…/play/…" autocomplete="off" />
-                <flux:button type="submit" variant="primary">Meine Runde öffnen ↗</flux:button>
+                <flux:button type="submit" variant="primary">Meine Runde öffnen</flux:button>
             </form>
         </section>
         <div class="welcome-side">
-            <section class="event-card"><span class="step-number" aria-hidden="true">↩</span><h2>Schon dabei?</h2><p class="muted">Mit deinem privaten Rückkehr-Link kommst du direkt zu deinem Spiel.</p><a class="text-link" href="{{ route('play.return') }}">Mit Rückkehr-Link fortsetzen</a></section>
-            <section class="welcome-organizer"><h2>Du organisierst?</h2><p class="muted">Turnier erstellen, die Einladung teilen und die Runden starten.</p><a class="text-link" href="{{ auth()->check() ? route('tournaments') : route('login') }}">Zur Organisation ↗</a></section>
+            <section class="event-card"><h2>Schon dabei?</h2><p class="muted">Mit deinem privaten Rückkehr-Link kommst du direkt zu deinem Spiel.</p><a class="text-link" href="{{ route('play.return') }}">Mit Rückkehr-Link fortsetzen</a></section>
+            <section class="welcome-organizer"><h2>Du organisierst?</h2><p class="muted">Turnier erstellen, die Einladung teilen und die Runden starten.</p><a class="text-link" href="{{ auth()->check() ? route('tournaments') : route('login') }}">Zur Organisation</a></section>
         </div>
     </div>
 </x-layouts.app>

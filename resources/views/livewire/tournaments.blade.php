@@ -22,7 +22,7 @@
                 <p class="muted">{{ match($tournament->format) { 'sealed' => 'Sealed', 'commander' => 'Commander', default => 'Constructed' } }}{{ $tournament->set_name ? ' · '.$tournament->set_name : '' }}</p>
                 <p class="muted">{{ $tournament->group->name }} · {{ $tournament->users_count }} Teilnehmende</p>
                 <div class="card-actions">
-                    <a class="arena-button" href="{{ route('tournament', $tournament) }}" wire:navigate>Turnier öffnen <span aria-hidden="true">↗</span></a>
+                    <a class="arena-button" href="{{ route('tournament', $tournament) }}" wire:navigate>Turnier öffnen</a>
                     @if($tournament->status === App\Enums\Status::OPEN && !$tournament->joined)
                         <a class="utility-button" href="{{ route('tournament', $tournament) }}#join" wire:navigate>Mitspielen</a>
                     @endif

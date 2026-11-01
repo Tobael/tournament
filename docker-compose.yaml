@@ -16,6 +16,17 @@ services:
       SESSION_LIFETIME: 43200
       CACHE_STORE: database
       QUEUE_CONNECTION: sync
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: ${REVERB_APP_ID:-tournament}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:?Set REVERB_APP_KEY in .env}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:?Set REVERB_APP_SECRET in .env}
+      REVERB_HOST: 127.0.0.1
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      REVERB_SERVER_HOST: 127.0.0.1
+      REVERB_SERVER_PORT: 8080
+      REVERB_BROWSER_PORT: ''
+      REVERB_ALLOWED_ORIGINS: ${TOURNAMENT_HOST:-mtg.betz.coffee}
     volumes:
       - ./data/storage:/var/www/html/storage/app
       - ./data/database:/var/www/html/database/runtime

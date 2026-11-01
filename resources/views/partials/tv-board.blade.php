@@ -10,7 +10,7 @@
     </div>
 </header>
 @if($closed && $standings->isNotEmpty())
-    <div class="tv-winners" data-tv-key="winners">♛ {{ $standings->where('place', 1)->pluck('name')->join(' & ') }} <span>· {{ $standings->where('place', 1)->count() > 1 ? 'Geteilter Turniersieg' : 'Turniersieg' }}</span></div>
+    <div class="tv-winners" data-tv-key="winners">{{ $standings->where('place', 1)->pluck('name')->join(' & ') }} <span>· {{ $standings->where('place', 1)->count() > 1 ? 'Geteilter Turniersieg' : 'Turniersieg' }}</span></div>
 @endif
 <div class="tv-columns">
     <section class="tv-panel tv-standings">
@@ -30,12 +30,13 @@
         <div class="tv-fit"><div class="tv-fit-content tv-match-list">
             @forelse($currentRound?->matches ?? [] as $match)
                 <article class="tv-match {{ $match->isCompleted() ? 'is-complete' : '' }}" data-tv-key="match-{{ $match->id }}" data-tv-value="{{ $match->result?->value }}:{{ json_encode($match->commander_scores) }}">
-                    <div class="tv-match-heading"><strong>Tisch {{ $loop->iteration }}</strong><span>
+                    <div class="tv-match-heading"><strong>Tisch {{ $loop->iteration }}</strong>@if(!$commander && $match->player_b_id && !$match->isCompleted())<span data-tv-game-score>Spiele {{ $match->game_wins[$match->player_a_id] ?? 0 }}–{{ $match->game_wins[$match->player_b_id] ?? 0 }}</span>@endif<span>
                         @if($match->isCompleted()) Beendet
                         @elseif($closed) Ohne Ergebnis
                         @elseif($match->timer_ends_at)<span data-tv-deadline="{{ $match->timer_ends_at->getTimestampMs() }}">{{ $match->timer_ends_at->isPast() ? 'Zeit abgelaufen' : 'Timer läuft' }}</span>
                         @else Bereit @endif
                     </span></div>
+                    @if($match->isCompleted() || !$match->player_b_id)
                     @if($commander)
                         <div class="tv-seats">
                             @foreach($match->players as $player)
@@ -44,6 +45,19 @@
                         </div>
                     @else
                         <div class="tv-duel"><strong>{{ $match->playerA?->user->name }}</strong><b>{{ $match->result?->label() ?? 'vs.' }}</b><strong>{{ $match->playerB?->user->name ?? 'Freilos' }}</strong></div>
+                    @endif
+                    @endif
+                    @if($match->player_b_id && !$match->isCompleted())
+                        @php($life = app(\App\Services\MatchLife::class)->snapshot($tournament, $match))
+                        <div class="tv-life-seats" data-tv-life-match="{{ $match->id }}" data-life-revision="{{ $life['revision'] }}">
+                            @foreach($life['players'] as $seat)
+                                @php($maxDamage = max([0, ...array_values($seat['damage'])]))
+                                <div class="{{ $seat['life'] <= 0 || $maxDamage >= 21 ? 'life-lethal' : '' }}" data-tv-life-player="{{ $seat['id'] }}">
+                                    <span>{{ $seat['name'] }}</span><strong><b data-tv-life-total>{{ $seat['life'] }}</b></strong><output class="tv-life-transaction" data-tv-life-transaction aria-live="polite"></output>
+                                    @if($commander)<small data-tv-life-damage>{{ $maxDamage ? 'CMDR '.$maxDamage.'/21' : '' }}</small>@endif
+                                </div>
+                            @endforeach
+                        </div>
                     @endif
                 </article>
             @empty

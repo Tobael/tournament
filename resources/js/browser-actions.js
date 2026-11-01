@@ -14,7 +14,7 @@ export async function copyLink(input, button, message, browser = globalThis) {
         input.setSelectionRange(0, url.length);
         try { copied = browser.document.execCommand('copy') === true; } catch { /* Keep the link selected. */ }
     }
-    button.textContent = copied ? '✓ Kopiert' : 'Link kopieren';
+    button.textContent = copied ? 'Kopiert' : 'Link kopieren';
     message.textContent = copied ? 'Link kopiert.' : 'Der Link ist markiert. Halte das Feld gedrückt und wähle „Kopieren“.';
     return copied;
 }

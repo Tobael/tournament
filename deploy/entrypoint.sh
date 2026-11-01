@@ -10,12 +10,14 @@ if [ "$#" -gt 0 ]; then
 fi
 php-fpm -F &
 fpm_pid=$!
+php artisan reverb:start &
+reverb_pid=$!
 nginx -g 'daemon off;' &
 nginx_pid=$!
-trap 'kill "$fpm_pid" "$nginx_pid" 2>/dev/null; wait; exit 0' TERM INT
-while kill -0 "$fpm_pid" && kill -0 "$nginx_pid"; do
+trap 'kill "$fpm_pid" "$nginx_pid" "$reverb_pid" 2>/dev/null; wait; exit 0' TERM INT
+while kill -0 "$fpm_pid" && kill -0 "$nginx_pid" && kill -0 "$reverb_pid"; do
     sleep 2
 done
-kill "$fpm_pid" "$nginx_pid" 2>/dev/null || true
+kill "$fpm_pid" "$nginx_pid" "$reverb_pid" 2>/dev/null || true
 wait || true
 exit 1

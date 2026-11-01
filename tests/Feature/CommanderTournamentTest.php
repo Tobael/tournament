@@ -86,7 +86,7 @@ test('only table players and organizers can report and the first commander resul
     expect($winner->fresh()->games())->toBe(1);
     Livewire::test(TournamentPage::class, ['tournament' => $event])->call('reportCommanderDraw', $table->id)->assertStatus(409);
     // A finished table cannot start a timer.
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $table->id, 90)->assertOk();
+    $this->postJson(route('play.life.update', [$event->invite_token, $table->id]), ['action' => 'timer', 'minutes' => 90])->assertConflict();
     expect($table->refresh()->timer_ends_at)->toBeNull();
 });
 

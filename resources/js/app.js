@@ -1,3 +1,9 @@
+import { setupMatchLife } from './match-life';
+import { setupRoundRealtime } from './realtime';
+const setupLive = () => { setupMatchLife(); setupRoundRealtime(); };
+document.addEventListener('DOMContentLoaded', setupLive);
+document.addEventListener('livewire:navigated', setupLive);
+setupLive();
 import { setupSetParallax } from './set-parallax';
 import { setupSetCardTools } from './set-card-tools';
 import { setupSetVisuals } from './set-visuals';

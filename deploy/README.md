@@ -16,7 +16,9 @@ No Flux credentials or other build secrets are needed. The host needs Docker and
 
 The new deployment deliberately uses a fresh SQLite database at `~/mtg/data/database/tournament.sqlite` and uploads at `~/mtg/data/storage`. The legacy `/docker-compose-services/mtg` database is not imported. The entrypoint initializes an absent SQLite file inside the mounted database directory and sets write permissions. First deployment and subsequent updates use the same workflow.
 
-Compose enforces production mode, debug off, SQLite at `/var/www/html/database/runtime/tournament.sqlite`, database sessions/cache, secure session cookies and a 30-day idle session lifetime. `TOURNAMENT_HOST` defaults to `mtg.betz.coffee`. Change `APP_URL` and `TOURNAMENT_HOST` together for a different hostname. Existing Reverb, broadcast and Flux environment variables can be removed from `ENV_FILE`; they are no longer used.
+Compose enforces production mode, debug off, SQLite at `/var/www/html/database/runtime/tournament.sqlite`, database sessions/cache, secure session cookies and a 30-day idle session lifetime. `TOURNAMENT_HOST` defaults to `mtg.betz.coffee`. Change `APP_URL` and `TOURNAMENT_HOST` together for a different hostname.
+
+The container runs Reverb alongside PHP and nginx. Before building, deployment generates private Reverb credentials in `~/mtg/secrets/reverb.env` and reuses them on later deployments. Explicit `REVERB_APP_KEY` and `REVERB_APP_SECRET` in `ENV_FILE` override these generated credentials. Include `secrets/` in the private host backup policy. The existing Laravel `APP_KEY` is preserved. Local demo tournaments are never seeded by deployment.
 
 After the first deployment, create an organizer on the host:
 
@@ -33,7 +35,7 @@ The old app labels defined an `mtg-auth` Basic Auth middleware and applied it to
 
 The homelab Traefik service has `api.insecure=false`; its dashboard router uses `internal-app@file`. That chain is LAN-only access plus error handling and security headers. Homelab's `websecure` entrypoint adds `global-noindex@file`, not Basic Auth. The app therefore needs no shared Traefik password, and removing its app-specific middleware does not remove the dashboard's separate network restriction. This conclusion is based on the checked-out homelab configuration; running production labels have not been inspected.
 
-The app still uses HTTPS, homelab security headers, CSRF protection, rate limits on joining/recovery, server-side organizer checks, and scoped private participant tokens. Event links grant spectator access; private return links grant permission to report a particular participant's matches. There is no websocket route or exposed port 8080.
+The app still uses HTTPS, homelab security headers, CSRF protection, rate limits on joining/recovery, server-side organizer checks, and scoped private participant tokens. Event links grant spectator access; private return links grant permission to report a particular participant's matches. nginx proxies WebSocket connections at `/app/` through the existing HTTPS route; port 8080 stays internal to the container. Reverb accepts the configured tournament hostname as its browser origin.
 
 ## Backup and failure recovery
 

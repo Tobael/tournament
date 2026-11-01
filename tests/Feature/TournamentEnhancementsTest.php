@@ -2,7 +2,6 @@
 
 use App\Enums\RoundMatchResult;
 use App\Enums\Status;
-use App\Livewire\Tournament as TournamentPage;
 use App\Livewire\Tournaments;
 use App\Models\Group;
 use App\Models\Tournament;
@@ -22,38 +21,45 @@ function timedEvent(): array
     return [$event, $match];
 }
 
-test('any viewer can start a shared timer but cannot reset it or score a match', function () {
+test('match timers start only inside the counter and preserve their original deadline', function () {
     [$event, $match] = timedEvent();
+    $url = route('play.life.update', [$event->invite_token, $match->id]);
+    $this->get(route('play', $event->invite_token))->assertOk()->assertSee('Lebenszähler öffnen')->assertDontSee('Timer starten');
+    $this->postJson($url, ['action' => 'timer', 'minutes' => 50])->assertForbidden();
+    $this->actingAs($match->playerA->user);
     $this->freezeTime();
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $match->id, 50)->assertOk();
+    $this->postJson($url, ['action' => 'timer', 'minutes' => 50])->assertOk();
     $deadline = $match->refresh()->timer_ends_at;
     expect($deadline->timestamp)->toBe(now()->addMinutes(50)->timestamp);
     $this->travel(10)->minutes();
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $match->id, 90)->assertOk();
+    $this->postJson($url, ['action' => 'timer', 'minutes' => 90])->assertOk();
     expect($match->refresh()->timer_ends_at->equalTo($deadline))->toBeTrue();
     $this->travel(41)->minutes();
-    $this->get(route('play', $event->invite_token))->assertOk()->assertSee('Zeit abgelaufen');
+    $this->get(route('play', $event->invite_token))->assertOk()->assertSee('Zeit abgelaufen')->assertDontSee('Timer starten');
     expect($match->refresh()->result)->toBeNull();
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('updateCurrentMatchForUser', '2-0')->assertForbidden();
 });
 
-test('timers reject other events, past rounds, byes, invalid durations and closed events', function () {
+test('counter timers reject other events, past rounds, byes, invalid durations and closed events', function () {
     [$event, $match] = timedEvent();
     [$other, $foreignMatch] = timedEvent();
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $foreignMatch->id)->assertNotFound();
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $match->id, -1)->assertStatus(422);
+    $this->actingAs($match->playerA->user);
+    $command = ['action' => 'timer', 'minutes' => 50];
+    $url = fn ($table) => route('play.life.update', [$event->invite_token, $table->id]);
+    $this->postJson($url($foreignMatch), $command)->assertNotFound();
+    $this->postJson($url($match), [...$command, 'minutes' => -1])->assertUnprocessable();
     $bye = $event->currentRound()->matches()->create(['player_a_id' => $match->player_a_id]);
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $bye->id)->assertNotFound();
+    $this->postJson($url($bye), $command)->assertConflict();
     $event->rounds()->create(['round' => 2]);
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $match->id)->assertNotFound();
+    $this->postJson($url($match), $command)->assertConflict();
     $event->update(['status' => Status::CLOSED]);
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $match->id)->assertStatus(422);
+    $this->postJson($url($match), $command)->assertConflict();
 });
 
 test('a completed match cannot start a timer and closing celebrates all tied winners', function () {
     [$event, $match] = timedEvent();
+    $this->actingAs($match->playerA->user);
     $match->update(['result' => RoundMatchResult::DRAW]);
-    Livewire::test(TournamentPage::class, ['tournament' => $event])->call('startMatchTimer', $match->id)->assertOk();
+    $this->postJson(route('play.life.update', [$event->invite_token, $match->id]), ['action' => 'timer', 'minutes' => 50])->assertConflict();
     expect($match->refresh()->timer_ends_at)->toBeNull();
     $this->get(route('play', $event->invite_token))->assertDontSee('Siegerehrung');
     $event->update(['status' => Status::CLOSED]);

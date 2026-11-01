@@ -7,7 +7,7 @@ COPY vite.config.js ./
 
 FROM php:8.4-fpm-alpine AS php-base
 RUN apk add --no-cache nginx curl sqlite-dev oniguruma-dev \
-    && docker-php-ext-install pdo_sqlite mbstring opcache
+    && docker-php-ext-install pdo_sqlite mbstring opcache pcntl
 WORKDIR /var/www/html
 
 FROM php-base AS dependencies

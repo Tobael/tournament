@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 test -s .env
+bash deploy/configure-reverb.sh
 docker compose config --quiet
 docker network inspect external_network >/dev/null
 docker compose build --pull

@@ -52,6 +52,7 @@ class TournamentTvController extends Controller
     {
         return response()->json([
             'html' => $tournament ? view('partials.tv-board', $this->board($tournament))->render() : view('partials.tv-empty')->render(),
+            'invite' => $tournament?->invite_token,
             'closed' => $tournament?->status === Status::CLOSED,
             'title' => ($tournament?->name ?? 'Spielrunde').' · TV · Spielrunde',
             'playUrl' => $tournament ? route('play', $tournament->invite_token) : route('home', ['home' => 1]),
