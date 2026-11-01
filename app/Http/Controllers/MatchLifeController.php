@@ -21,10 +21,14 @@ class MatchLifeController extends Controller
     public function show(Tournament $tournament, int $match, MatchLife $life)
     {
         $table = $this->table($tournament, $match);
+        $state = $life->snapshot($tournament, $table);
+        if (! $state['editable']) {
+            return redirect($state['returnUrl'])->header('Cache-Control', 'no-store');
+        }
         $participant = $tournament->participant();
         $canControl = auth()->user()?->is_admin || ($participant && $life->players($tournament, $table)->contains('id', $participant->id));
 
-        return response()->view('match-life', ['tournament' => $tournament, 'match' => $table, 'state' => $life->snapshot($tournament, $table), 'canControl' => $canControl])->header('Cache-Control', 'no-store');
+        return response()->view('match-life', ['tournament' => $tournament, 'match' => $table, 'state' => $state, 'canControl' => $canControl])->header('Cache-Control', 'no-store');
     }
 
     public function state(Tournament $tournament, int $match, MatchLife $life)

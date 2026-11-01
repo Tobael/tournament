@@ -79,7 +79,7 @@
         <p class="notice">Die Anmeldung ist geschlossen. Du kannst die Spiele und Tabelle hier verfolgen.</p>
     @endif
 
-    @if($myMatch && $myMatch->player_b_id)
+    @if($myMatch?->isLifeCounterActive($tournament))
         <p class="life-counter-link"><a class="utility-button" href="{{ route('play.life', [$tournament->invite_token, $myMatch->id]) }}">Lebenszähler öffnen</a></p>
     @endif
     @if($participant)
@@ -207,11 +207,11 @@
                 <summary>Runde {{ $round->round }} <span class="muted">{{ $round->isCompleted() ? 'Abgeschlossen' : 'Läuft' }}</span></summary>
                 @foreach($round->matches as $match)
                     @if($isCommander)
-                        <x-commander-table :match="$match" :number="$loop->iteration" :active="$tournament->status === Status::IN_PROGRESS && $round->id === $currentRound->id" :can-report="$isOrganizer || ($participant && $match->players->contains('id', $participant->id))" />
+                        <x-commander-table :match="$match" :number="$loop->iteration" :active="$match->isLifeCounterActive($tournament)" :can-report="$isOrganizer || ($participant && $match->players->contains('id', $participant->id))" />
                     @else
                     <div id="match-{{ $match->id }}" class="match-card">
                     <div class="match-row"><span>{{ $match->playerA->user->name }}</span><strong>{{ $match->result === RoundMatchResult::DRAW ? 'Remis' : ($match->result?->value ?? ($match->game_wins ? ($match->game_wins[$match->player_a_id] ?? 0).'–'.($match->game_wins[$match->player_b_id] ?? 0) : 'vs.')) }}</strong><span>{{ $match->playerB?->user->name ?? 'Freilos' }}</span></div>
-                    @if($tournament->status === Status::IN_PROGRESS && $round->id === $currentRound->id && $match->player_b_id && !$match->result)
+                    @if($match->isLifeCounterActive($tournament))
                         <p><a class="text-link" href="{{ route('play.life', [$tournament->invite_token, $match->id]) }}">Lebenszähler öffnen</a></p>
                         <x-match-timer :match="$match" />
                     @endif

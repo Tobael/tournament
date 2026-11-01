@@ -30,6 +30,72 @@ function lifeUrl($event, $match): string
     return route('play.life.update', [$event->invite_token, $match->id]);
 }
 
+test('inactive counters have no links and redirect before rendering for participants and spectators', function () {
+    foreach (['commander', 'sealed', 'constructed'] as $format) {
+        [$event, $players, $match] = lifeTable($format);
+        $url = lifeUrl($event, $match);
+        $back = route('play', $event->invite_token).'#my-match';
+        $this->actingAs($players[0]->user);
+        $this->get(route('play', $event->invite_token))->assertSee('href="'.$url.'"', false);
+        $this->get($url)->assertOk();
+
+        // Closing an unfinished tournament must also close its counters and TV life view.
+        $event->update(['status' => Status::CLOSED]);
+        $this->get(route('play', $event->invite_token))->assertDontSee('href="'.$url.'"', false);
+        $this->get($url)->assertRedirect($back)->assertHeader('Cache-Control', 'no-store, private')->assertDontSee('data-life-counter');
+        $this->getJson(route('play.life.state', [$event->invite_token, $match->id]))->assertJsonPath('editable', false);
+        $tv = $this->getJson(route('play.tv.state', $event->invite_token))->assertOk()->json('html');
+        expect($tv)->not->toContain('data-tv-life-match=');
+        foreach ($players as $player) {
+            expect($tv)->toContain($player->user->name);
+        }
+
+        // Historical matches cannot be reopened through bookmarks either.
+        $event->update(['status' => Status::IN_PROGRESS]);
+        $later = $event->rounds()->create(['round' => 2]);
+        $this->get(route('play', $event->invite_token))->assertDontSee('href="'.$url.'"', false);
+        $this->get($url)->assertRedirect($back);
+        $this->getJson(route('play.life.state', [$event->invite_token, $match->id]))->assertJsonPath('editable', false);
+        $later->delete();
+
+        $match->update($format === 'commander' ? ['commander_scores' => $players->mapWithKeys(fn ($player) => [$player->id => 1])->all()] : ['result' => RoundMatchResult::TWOZERO]);
+        $this->get(route('play', $event->invite_token))->assertDontSee('href="'.$url.'"', false);
+        $this->get($url)->assertRedirect($back);
+        auth()->logout();
+        $this->get(route('play', $event->invite_token))->assertDontSee('href="'.$url.'"', false);
+        $this->get($url)->assertRedirect($back);
+    }
+});
+
+test('a bye never offers or renders a life counter', function () {
+    [$event, $players, $match] = lifeTable('sealed');
+    $match->update(['player_b_id' => null, 'result' => RoundMatchResult::TWOZERO]);
+    $this->actingAs($players[0]->user);
+    $this->get(route('play', $event->invite_token))->assertDontSee('Lebenszähler öffnen');
+    $this->get(lifeUrl($event, $match))->assertRedirect(route('play', $event->invite_token).'#my-match');
+});
+
+test('manual result reports advance the life revision and reconcile a partial best-of-three score', function () {
+    foreach (RoundMatchResult::cases() as $result) {
+        [$event, $players, $match] = lifeTable('sealed');
+        $match->forceFill(['game_wins' => [$players[0]->id => 1, $players[1]->id => 0], 'life_revision' => 4])->save();
+        $this->actingAs($players[0]->user);
+        Livewire::test(App\Livewire\Tournament::class, ['tournament' => $event])
+            ->call('updateCurrentMatchForUser', $result->value)->assertOk()->assertDontSee('Lebenszähler öffnen');
+        $match->refresh();
+        expect($match->life_revision)->toBe(5);
+        expect($match->game_wins)->toBe($result === RoundMatchResult::DRAW ? null : array_combine($players->pluck('id')->all(), array_map('intval', explode('-', $result->value))));
+        $this->getJson(route('play.life.state', [$event->invite_token, $match->id]))->assertJsonPath('completed', true)->assertJsonPath('editable', false)->assertJsonPath('revision', 5);
+        $this->postJson(lifeUrl($event, $match), ['action' => 'life', 'player' => $players[0]->id, 'delta' => -1])->assertConflict();
+    }
+
+    [$event, $players, $match] = lifeTable();
+    $this->actingAs($players[0]->user);
+    Livewire::test(App\Livewire\Tournament::class, ['tournament' => $event])
+        ->call('reportCommanderWinner', $match->id, $players[0]->id)->assertOk()->assertDontSee('Lebenszähler öffnen');
+    expect($match->fresh()->life_revision)->toBe(1);
+});
+
 test('a shared counter starts at format life and supports spectators without write access', function () {
     foreach (['commander' => 40, 'constructed' => 20, 'sealed' => 20] as $format => $initial) {
         [$event, $players, $match] = lifeTable($format);
@@ -186,8 +252,12 @@ test('Sealed records one game at a time, persists the score and finishes only at
                 $this->getJson(route('play.life.state', [$event->invite_token, $match->id]))->assertJsonPath('players.0.wins', $wins[0]);
                 $tv = $this->getJson(route('play.tv.state', $event->invite_token))->assertOk()->json('html');
                 expect($tv)->toContain('Spiele '.$wins[0].'–'.$wins[1]);
+                $this->get(route('play', $event->invite_token))->assertSee('Lebenszähler öffnen');
+                $this->get(lifeUrl($event, $match))->assertOk();
             } else {
                 expect($match->result)->toBe(RoundMatchResult::from($wins[0].'-'.$wins[1]));
+                $this->get(route('play', $event->invite_token))->assertDontSee('Lebenszähler öffnen');
+                $this->get(lifeUrl($event, $match))->assertRedirect(route('play', $event->invite_token).'#my-match');
             }
         }
     }

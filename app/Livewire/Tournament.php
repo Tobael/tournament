@@ -112,7 +112,7 @@ class Tournament extends Component
     private function saveCommanderScores(RoundMatch $match, array $scores): void
     {
         abort_unless($match->newQuery()->whereKey($match->id)->whereNull('commander_scores')->whereNull('result')
-            ->update(['commander_scores' => json_encode($scores, JSON_THROW_ON_ERROR)]), 409);
+            ->update(['commander_scores' => json_encode($scores, JSON_THROW_ON_ERROR), 'life_revision' => DB::raw('life_revision + 1')]), 409);
         $this->tournament->refresh();
     }
 
@@ -151,6 +151,8 @@ class Tournament extends Component
         // Only the first submission wins, even if both players submit together.
         abort_unless($match->newQuery()->whereKey($match->id)->whereNull('result')->update([
             'result' => $result->value,
+            'game_wins' => $result === RoundMatchResult::DRAW ? null : json_encode(array_combine([$match->player_a_id, $match->player_b_id], array_map('intval', explode('-', $result->value))), JSON_THROW_ON_ERROR),
+            'life_revision' => DB::raw('life_revision + 1'),
         ]), 409);
         $this->tournament->refresh();
 

@@ -1,7 +1,9 @@
 @props(['match', 'number', 'active', 'canReport' => false])
 <article class="commander-table {{ $canReport ? 'own-table' : '' }}" id="match-{{ $match->id }}" wire:key="commander-table-{{ $match->id }}">
     <div class="section-heading"><h3>Tisch {{ $number }}</h3><span class="status-pill">{{ $match->players->count() }} Personen · {{ $match->isCompleted() ? 'Abgeschlossen' : 'Ein Spiel' }}</span></div>
-    <p><a class="text-link" href="{{ route('play.life', [$match->round->tournament->invite_token, $match->id]) }}">Lebenszähler öffnen</a></p>
+    @if($active)
+        <p><a class="text-link" href="{{ route('play.life', [$match->round->tournament->invite_token, $match->id]) }}">Lebenszähler öffnen</a></p>
+    @endif
     <ol class="table-seats">
         @foreach($match->players as $player)
             <li><span class="seat-number">{{ $loop->iteration }}</span><strong>{{ $player->user->name }}</strong>

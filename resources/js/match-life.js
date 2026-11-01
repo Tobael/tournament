@@ -8,6 +8,7 @@ import { setupPressHold, createLifeTransactions } from './life-interactions.js';
 import { setupQuickActions } from './quick-actions.js';
 import { setupLifeTimer } from './life-timer.js';
 import { setupLifeEntry } from './edit-life.js';
+import { acceptsMatchState, leaveInactiveMatch } from './match-state.js';
 
 export function setupMatchLife() {
     const root = document.querySelector('[data-life-counter]');
@@ -28,9 +29,10 @@ export function setupMatchLife() {
         if (output) output.textContent = text;
     } });
     function render(next) {
-        if (next.matchId !== state.matchId || next.revision < state.revision) return;
+        if (!acceptsMatchState(state, next)) return;
         transactions.update(next.players, next.operation);
         state = next;
+        if (leaveInactiveMatch(root, state)) return;
         for (const player of state.players) {
             const seat = root.querySelector(`[data-life-seat="${player.id}"]`);
             if (!seat) continue;
@@ -76,6 +78,7 @@ export function setupMatchLife() {
         pendingWrites++;
         const task = pending.then(async () => {
             try {
+                if (!state.editable || state.completed) return false;
                 const response = await fetch(root.dataset.updateUrl, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                     body: JSON.stringify(command), signal: AbortSignal.timeout(10000),

@@ -29,6 +29,7 @@
         <div class="tv-panel-heading"><h2>{{ $currentRound ? 'Tische · Runde '.$currentRound->round : 'Die Tische' }}</h2><span>{{ $currentRound ? $currentRound->matches->filter(fn ($match) => $match->isCompleted())->count().' / '.$currentRound->matches->count().' beendet' : 'Gleich geht’s los' }}</span></div>
         <div class="tv-fit"><div class="tv-fit-content tv-match-list">
             @forelse($currentRound?->matches ?? [] as $match)
+                @php($counterActive = $match->isLifeCounterActive($tournament))
                 <article class="tv-match {{ $match->isCompleted() ? 'is-complete' : '' }}" data-tv-key="match-{{ $match->id }}" data-tv-value="{{ $match->result?->value }}:{{ json_encode($match->commander_scores) }}">
                     <div class="tv-match-heading"><strong>Tisch {{ $loop->iteration }}</strong>@if(!$commander && $match->player_b_id && !$match->isCompleted())<span data-tv-game-score>Spiele {{ $match->game_wins[$match->player_a_id] ?? 0 }}–{{ $match->game_wins[$match->player_b_id] ?? 0 }}</span>@endif<span>
                         @if($match->isCompleted()) Beendet
@@ -36,7 +37,7 @@
                         @elseif($match->timer_ends_at)<span data-tv-deadline="{{ $match->timer_ends_at->getTimestampMs() }}">{{ $match->timer_ends_at->isPast() ? 'Zeit abgelaufen' : 'Timer läuft' }}</span>
                         @else Bereit @endif
                     </span></div>
-                    @if($match->isCompleted() || !$match->player_b_id)
+                    @if(!$counterActive)
                     @if($commander)
                         <div class="tv-seats">
                             @foreach($match->players as $player)
@@ -47,7 +48,7 @@
                         <div class="tv-duel"><strong>{{ $match->playerA?->user->name }}</strong><b>{{ $match->result?->label() ?? 'vs.' }}</b><strong>{{ $match->playerB?->user->name ?? 'Freilos' }}</strong></div>
                     @endif
                     @endif
-                    @if($match->player_b_id && !$match->isCompleted())
+                    @if($counterActive)
                         @php($life = app(\App\Services\MatchLife::class)->snapshot($tournament, $match))
                         <div class="tv-life-seats" data-tv-life-match="{{ $match->id }}" data-life-revision="{{ $life['revision'] }}">
                             @foreach($life['players'] as $seat)

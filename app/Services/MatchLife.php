@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\Status;
 use App\Models\RoundMatch;
 use App\Models\Tournament;
 
@@ -31,7 +30,7 @@ class MatchLife
             'completed' => $match->isCompleted(),
             'returnUrl' => route('play', $tournament->invite_token).'#my-match',
             'revision' => $match->life_revision,
-            'editable' => $tournament->status === Status::IN_PROGRESS && ! $match->isCompleted() && $tournament->currentRound()?->id === $match->round_id && $players->count() > 1,
+            'editable' => $match->isLifeCounterActive($tournament),
             'players' => $players->map(fn ($player) => [
                 'id' => $player->id,
                 'name' => $player->user->name,

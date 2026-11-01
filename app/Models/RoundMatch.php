@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RoundMatchResult;
+use App\Enums\Status;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -41,6 +42,14 @@ class RoundMatch extends Model
     public function isCompleted(): bool
     {
         return $this->result !== null || $this->commander_scores !== null;
+    }
+
+    public function isLifeCounterActive(Tournament $tournament): bool
+    {
+        return $tournament->status === Status::IN_PROGRESS
+            && ! $this->isCompleted()
+            && $tournament->currentRound()?->id === $this->round_id
+            && ($tournament->format === 'commander' ? $this->players->count() > 1 : $this->player_b_id !== null);
     }
 
     public function round(): BelongsTo

@@ -31,7 +31,6 @@ export function setupMatchFinish(root, { getState, isBusy, send }) {
     let timer;
     function check() {
         const state = getState();
-        if (state.completed) { window.location.assign(state.returnUrl); return; }
         const survivor = survivingPlayer(state);
         reopen.hidden = !survivor;
         if (dialog.open && (!survivor || survivor.id !== winnerId)) dialog.close();
@@ -64,8 +63,7 @@ export function setupMatchFinish(root, { getState, isBusy, send }) {
         const saved = await send({ action: 'finish', winner: winnerId, revision: state.revision });
         saving = false;
         if (saved) {
-            if (getState().completed) window.location.assign(getState().returnUrl);
-            else { dialog.close(); notice.reopen(); schedule(); }
+            dialog.close(); notice.reopen(); schedule();
             return;
         }
         message.textContent = 'Sieg nicht bestätigt. Stand prüfen und erneut versuchen.';
