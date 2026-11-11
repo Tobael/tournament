@@ -43,13 +43,14 @@ class MatchLifeController extends Controller
         $participant = $tournament->participant();
         abort_unless(auth()->user()?->is_admin || ($participant && $players->contains('id', $participant->id)), 403);
         $data = $request->validate([
+            'operation_id' => ['nullable', 'uuid'],
             'action' => ['required', Rule::in(['life', 'set-life', 'damage', 'reset', 'finish', 'timer'])],
             'player' => ['required_unless:action,reset,finish,timer', 'integer', Rule::in($players->pluck('id')->all())],
             'source' => ['required_if:action,damage', 'integer', Rule::in($players->pluck('id')->all())],
             'commander' => ['prohibited'],
             'delta' => $request->input('action') === 'damage'
                 ? ['required', 'integer', 'between:-99,99', 'not_in:0']
-                : ['required_unless:action,reset,finish,timer,set-life', 'integer', Rule::in([-5, -1, 1, 5])],
+                : ['required_unless:action,reset,finish,timer,set-life', 'integer', 'between:-99,99', 'not_in:0'],
             'value' => ['required_if:action,set-life', 'integer', 'between:-999,9999'],
             'minutes' => ['required_if:action,timer', 'integer', Rule::in([25, 50, 60, 90])],
             'winner' => ['required_if:action,finish', 'integer', Rule::in($players->pluck('id')->all())],
@@ -62,11 +63,11 @@ class MatchLifeController extends Controller
             $table->refresh();
             $tournament->refresh();
             $state = $life->snapshot($tournament, $table);
-            abort_unless($state['editable'], 409, 'Dieser Tisch ist nicht mehr aktiv.');
-            abort_if(in_array($data['action'], ['reset', 'finish', 'set-life'], true) && (int) $data['revision'] !== $table->life_revision, 409, 'Der Zähler wurde inzwischen geändert.');
+            abort_unless($state['editable'], 409, __('Dieser Tisch ist nicht mehr aktiv.'));
+            abort_if(in_array($data['action'], ['reset', 'finish', 'set-life'], true) && (int) $data['revision'] !== $table->life_revision, 409, __('Der Zähler wurde inzwischen geändert.'));
             if ($data['action'] === 'timer') {
                 if ($table->timer_ends_at) {
-                    return response()->json([...$state, 'operation' => 'timer'])->header('Cache-Control', 'no-store');
+                    return response()->json([...$state, 'operation' => 'timer', 'operationId' => $data['operation_id'] ?? null])->header('Cache-Control', 'no-store');
                 }
                 $saved = $table->newQuery()->whereKey($table->id)->where('life_revision', $table->life_revision)
                     ->whereNull('result')->whereNull('commander_scores')->whereNull('timer_ends_at')
@@ -74,7 +75,7 @@ class MatchLifeController extends Controller
                 if (! $saved) {
                     continue;
                 }
-                $state = [...$life->snapshot($tournament, $table->fresh()), 'operation' => 'timer'];
+                $state = [...$life->snapshot($tournament, $table->fresh()), 'operation' => 'timer', 'operationId' => $data['operation_id'] ?? null];
                 rescue(fn () => event(new LifeChanged($tournament->invite_token, $state)), report: true);
                 rescue(fn () => event(new BoardChanged), report: true);
 
@@ -83,7 +84,7 @@ class MatchLifeController extends Controller
             if ($data['action'] === 'finish') {
                 $alive = collect($state['players'])->filter(fn ($player) => $player['life'] > 0
                     && ($tournament->format !== 'commander' || max([0, ...array_values($player['damage'])]) < 21));
-                abort_unless($alive->count() === 1 && $alive->first()['id'] === (int) $data['winner'], 409, 'Der Gewinner hat sich inzwischen geändert.');
+                abort_unless($alive->count() === 1 && $alive->first()['id'] === (int) $data['winner'], 409, __('Der Gewinner hat sich inzwischen geändert.'));
                 $operation = 'finish';
                 if ($tournament->format === 'commander') {
                     $result = ['commander_scores' => json_encode($players->mapWithKeys(fn ($player) => [$player->id => $player->id === (int) $data['winner'] ? 3 : 0])->all(), JSON_THROW_ON_ERROR)];
@@ -103,7 +104,7 @@ class MatchLifeController extends Controller
                 abort_unless($table->newQuery()->whereKey($table->id)->where('life_revision', $table->life_revision)
                     ->whereNull('result')->whereNull('commander_scores')
                     ->update([...$result, 'life_revision' => $table->life_revision + 1]), 409);
-                $state = [...$life->snapshot($tournament, $table->fresh()), 'operation' => $operation];
+                $state = [...$life->snapshot($tournament, $table->fresh()), 'operation' => $operation, 'operationId' => $data['operation_id'] ?? null];
                 rescue(fn () => event(new LifeChanged($tournament->invite_token, $state)), report: true);
                 rescue(fn () => event(new BoardChanged), report: true);
 
@@ -129,12 +130,12 @@ class MatchLifeController extends Controller
                     'life_revision' => $table->life_revision + 1,
                 ]);
             if ($saved) {
-                $state = [...$life->snapshot($tournament, $table->fresh()), 'operation' => $data['action']];
+                $state = [...$life->snapshot($tournament, $table->fresh()), 'operation' => $data['action'], 'operationId' => $data['operation_id'] ?? null];
                 rescue(fn () => event(new LifeChanged($tournament->invite_token, $state)), report: true);
 
                 return response()->json($state)->header('Cache-Control', 'no-store');
             }
         }
-        abort(409, 'Viele gleichzeitige Änderungen. Bitte erneut versuchen.');
+        abort(409, __('Viele gleichzeitige Änderungen. Bitte erneut versuchen.'));
     }
 }

@@ -29,13 +29,13 @@ class Tournament extends Component
             $this->validate(['tvYoutube' => ['required', 'string', 'max:500']]);
             $url = TvMusic::embed(trim($this->tvYoutube));
             if (! $url) {
-                $this->addError('tvYoutube', 'Bitte einen gültigen YouTube-Link zu einem Video oder einer Playlist einfügen.');
+                $this->addError('tvYoutube', __('Bitte einen gültigen YouTube-Link zu einem Video oder einer Playlist einfügen.'));
 
                 return;
             }
         }
         $this->tournament->forceFill(['tv_youtube_url' => $url, 'tv_music_revision' => (string) Str::uuid()])->save();
-        session()->flash('tv-music-status', $stop ? 'Musik auf dem TV gestoppt.' : 'An den TV gesendet. Die Wiedergabe startet sofort bei bestehender Live-Verbindung.');
+        session()->flash('tv-music-status', $stop ? __('Musik auf dem TV gestoppt.') : __('An den TV gesendet. Die Wiedergabe startet sofort bei bestehender Live-Verbindung.'));
     }
 
     public bool $hideNextRoundButton = false;
@@ -55,7 +55,7 @@ class Tournament extends Component
     {
         $this->tournament->loadMissing(['group', 'users.user', 'matches', 'rounds.matches.playerA.user', 'rounds.matches.playerB.user', 'rounds.matches.players.user']);
 
-        return view('livewire.tournament')->title($this->tournament->name.' · Spielrunde');
+        return view('livewire.tournament')->title($this->tournament->name.' · Arcane Table');
     }
 
     public function openFinishModal(): void

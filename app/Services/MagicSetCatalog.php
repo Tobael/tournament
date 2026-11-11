@@ -15,7 +15,7 @@ class MagicSetCatalog
         }
 
         try {
-            $response = Http::acceptJson()->withUserAgent('Spielrunde/1.0 (sealed set selection)')
+            $response = Http::acceptJson()->withUserAgent('Arcane Table/1.0 (sealed set selection)')
                 ->connectTimeout(2)->timeout(5)->get('https://api.scryfall.com/sets')->throw();
             $sets = collect($response->json('data', []))
                 ->filter(fn ($set) => ! ($set['digital'] ?? true)

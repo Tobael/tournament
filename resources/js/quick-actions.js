@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { showDie } from './dice-scene.js';
 
 export function randomIndex(count, draw = () => crypto.getRandomValues(new Uint32Array(1))[0]) {
@@ -11,7 +12,7 @@ export function randomIndex(count, draw = () => crypto.getRandomValues(new Uint3
 export function rollDie(sides, draw) {
     if (![2, 4, 6, 8, 10, 12, 20].includes(sides)) throw new RangeError('Unsupported die');
     const value = randomIndex(sides, draw) + 1;
-    return { value, label: sides === 2 ? `Münze: ${value === 1 ? 'Kopf' : 'Zahl'}` : `d${sides}: ${value}` };
+    return { value, label: sides === 2 ? `${t('Münze')}: ${value === 1 ? t('Kopf') : t('Zahl')}` : `d${sides}: ${value}` };
 }
 
 export function selectionFrames(count, target) {
@@ -90,19 +91,19 @@ export function setupQuickActions(root, getPlayers) {
         if (die) {
             const sides = Number(die.dataset.quickDie);
             const roll = rollDie(sides);
-            text.textContent = sides === 2 ? 'Münzwurf' : `d${sides}`;
+            text.textContent = sides === 2 ? t('Münzwurf') : `d${sides}`;
             stopAnimation = showDie(result, sides, roll.value, { reduced, finish: () => finish(roll.label) });
         } else {
             const players = getPlayers();
             if (!players.length) { busy = false; toggle.disabled = false; toggle.setAttribute('aria-busy', 'false'); clear(); return; }
             const target = randomIndex(players.length);
             const player = players[target];
-            if (reduced) { finish(`Spieler: ${player.name}`, player.id); return; }
+            if (reduced) { finish(`${t('Spieler')}: ${player.name}`, player.id); return; }
             root.classList.add('is-selecting-player');
             stopAnimation = animateFrames(selectionFrames(players.length, target), index => {
                 text.textContent = players[index].name;
                 highlight(players[index].id);
-            }, () => finish(`Spieler: ${player.name}`, player.id));
+            }, () => finish(`${t('Spieler')}: ${player.name}`, player.id));
         }
     }
     function toggleMenu() {

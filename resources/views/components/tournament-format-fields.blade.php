@@ -1,30 +1,30 @@
 @props(['format', 'sets', 'tablePreference' => 'balanced', 'roundLimit' => 3, 'setCode' => '', 'context' => 'form'])
-<flux:select wire:model.live="format" label="Format">
-    <option value="sealed">Sealed</option>
-    <option value="commander">Commander · Multiplayer-Liga</option>
-    <option value="constructed">Constructed / anderes Format</option>
+<flux:select wire:model.live="format" label="{{ __('Format') }}">
+    <option value="sealed">{{ __('Sealed') }}</option>
+    <option value="commander">{{ __('Commander · Multiplayer-Liga') }}</option>
+    <option value="constructed">{{ __('Constructed / anderes Format') }}</option>
 </flux:select>
 @if($format === 'sealed')
-    <flux:select wire:model.live="setCode" label="Sealed-Set">
-        <option value="">Offen / gemischte Sets</option>
+    <flux:select wire:model.live="setCode" label="{{ __('Sealed-Set') }}">
+        <option value="">{{ __('Offen / gemischte Sets') }}</option>
         @foreach($sets as $set)
-            <option value="{{ $set['code'] }}">{{ $set['name'] }} ({{ strtoupper($set['code']) }}){{ isset($set['released_at']) && $set['released_at'] > now()->toDateString() ? ' · angekündigt' : '' }}</option>
+            <option value="{{ $set['code'] }}">{{ $set['name'] }} ({{ strtoupper($set['code']) }}){{ isset($set['released_at']) && $set['released_at'] > now()->toDateString() ? __(' · angekündigt') : '' }}</option>
         @endforeach
     </flux:select>
     <flux:error name="setCode" />
     @if($setCode)
         <x-set-visual :code="$setCode" :name="collect($sets)->firstWhere('code', $setCode)['name'] ?? $setCode" variant="preview" :context="$context" />
     @endif
-    <p class="muted">{{ count($sets) ? 'Set-Auswahl von Scryfall · täglich aktualisiert, neueste zuerst.' : 'Set-Auswahl gerade nicht erreichbar. Du kannst das Set später ergänzen.' }}</p>
+    <p class="muted">{{ count($sets) ? __('Set-Auswahl von Scryfall · täglich aktualisiert, neueste zuerst.') : __('Set-Auswahl gerade nicht erreichbar. Du kannst das Set später ergänzen.') }}</p>
 @endif
 
 @if($format === 'commander')
-    <flux:select wire:model.live="tablePreference" label="Tischaufteilung">
-        <option value="balanced">Ausgewogen · möglichst 4 Personen</option>
-        <option value="small">Kleinere Tische · möglichst 3 Personen</option>
-        <option value="large">Größere Tische · möglichst 5 Personen</option>
+    <flux:select wire:model.live="tablePreference" label="{{ __('Tischaufteilung') }}">
+        <option value="balanced">{{ __('Ausgewogen · möglichst 4 Personen') }}</option>
+        <option value="small">{{ __('Kleinere Tische · möglichst 3 Personen') }}</option>
+        <option value="large">{{ __('Größere Tische · möglichst 5 Personen') }}</option>
     </flux:select>
-    <flux:input wire:model="roundLimit" type="number" min="1" max="10" label="Anzahl Runden" />
-    <p class="muted">Alle spielen jede Runde. Automatisch 3–5 Personen pro Tisch, bei nur zwei Teilnehmenden ein Duell. Kleinere Tische verkürzen meist die Wartezeit nach dem Ausscheiden. Keine Freilose. Deckwechsel zwischen den Runden sind frei.</p>
-    <p class="muted">Sieg: 3 Punkte · Zeitlimit: 1 Punkt pro verbliebener Person · ausgeschieden: 0 Punkte. Bei vereinbartem Remis erhalten alle am Tisch 1 Punkt.</p>
+    <flux:input wire:model="roundLimit" type="number" min="1" max="10" label="{{ __('Anzahl Runden') }}" />
+    <p class="muted">{{ __('Alle spielen jede Runde. Automatisch 3–5 Personen pro Tisch, bei nur zwei Teilnehmenden ein Duell. Kleinere Tische verkürzen meist die Wartezeit nach dem Ausscheiden. Keine Freilose. Deckwechsel zwischen den Runden sind frei.') }}</p>
+    <p class="muted">{{ __('Sieg: 3 Punkte · Zeitlimit: 1 Punkt pro verbliebener Person · ausgeschieden: 0 Punkte. Bei vereinbartem Remis erhalten alle am Tisch 1 Punkt.') }}</p>
 @endif

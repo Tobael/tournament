@@ -10,8 +10,18 @@ use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
 use App\Livewire\Tournament;
 use App\Livewire\Tournaments;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
+
+Route::post('/language', function (Request $request) {
+    $validated = $request->validate(['locale' => 'required|in:de,en']);
+    $request->session()->put('locale', $validated['locale']);
+    $previous = url()->previous();
+    $destination = parse_url($previous, PHP_URL_HOST) === $request->getHost() ? $previous : route('home', ['home' => 1]);
+
+    return redirect()->to($destination)->withCookie(cookie('arcane_locale', $validated['locale'], 525600, null, null, $request->isSecure(), true, false, 'lax'));
+})->name('language');
 
 Route::view('/', 'welcome')->name('home');
 Route::get('/tv', [TournamentTvController::class, 'latest'])->name('tv');

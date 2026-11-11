@@ -1,3 +1,4 @@
+@include('partials.i18n')
 <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}" />
 <meta name="reverb-port" content="{{ config('broadcasting.browser_port') }}" />
 <meta charset="utf-8" />

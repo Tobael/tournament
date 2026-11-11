@@ -15,7 +15,7 @@ class MagicSetVisuals
             return Cache::get($key, []);
         }
         try {
-            $cards = Http::acceptJson()->withUserAgent('Spielrunde/1.0 (Magic set artwork)')
+            $cards = Http::acceptJson()->withUserAgent('Arcane Table/1.0 (Magic set artwork)')
                 ->connectTimeout(2)->timeout(5)->get('https://api.scryfall.com/cards/search', [
                     'q' => 'set:'.$code.' game:paper', 'order' => 'edhrec', 'unique' => 'art',
                 ])->throw()->json('data', []);
@@ -54,7 +54,7 @@ class MagicSetVisuals
             return $svg;
         }
         try {
-            $svg = Http::withUserAgent('Spielrunde/1.0 (Magic set symbols)')->connectTimeout(2)->timeout(5)
+            $svg = Http::withUserAgent('Arcane Table/1.0 (Magic set symbols)')->connectTimeout(2)->timeout(5)
                 ->get('https://svgs.scryfall.io/sets/'.$code.'.svg')->throw()->body();
             if (! str_contains($svg, '<svg') || strlen($svg) > 200000) {
                 throw new \RuntimeException('Invalid set symbol');

@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import Pusher from 'pusher-js';
 
 let client;
@@ -56,7 +57,7 @@ export function setupRoundRealtime() {
     const status = value => {
         connected = value;
         const label = root.querySelector('[data-round-connection]');
-        if (label) label.textContent = connected ? 'Live · WebSocket' : 'Live-Verbindung unterbrochen · verbindet erneut';
+        if (label) label.textContent = connected ? 'Live · WebSocket' : t('Live-Verbindung unterbrochen · verbindet erneut');
     };
     const stop = subscribe('tv-board', 'board.changed', refresh, refresh, status);
     const cleanup = () => { stop(); rounds.delete(root); };

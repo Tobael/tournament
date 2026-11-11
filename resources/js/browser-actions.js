@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 export async function copyLink(input, button, message, browser = globalThis) {
     const url = input.value;
     let copied = false;
@@ -14,16 +15,16 @@ export async function copyLink(input, button, message, browser = globalThis) {
         input.setSelectionRange(0, url.length);
         try { copied = browser.document.execCommand('copy') === true; } catch { /* Keep the link selected. */ }
     }
-    button.textContent = copied ? 'Kopiert' : 'Link kopieren';
-    message.textContent = copied ? 'Link kopiert.' : 'Der Link ist markiert. Halte das Feld gedrückt und wähle „Kopieren“.';
+    button.textContent = copied ? 'Kopiert' : t('Link kopieren');
+    message.textContent = copied ? t('Link kopiert.') : t('Der Link ist markiert. Halte das Feld gedrückt und wähle „Kopieren“.');
     return copied;
 }
 
 export async function shareLink(input, button, message, browser = globalThis) {
     if (!browser.navigator.share) return copyLink(input, button, message, browser);
     try {
-        await browser.navigator.share({ title: 'Spielrunde', url: input.value });
-        message.textContent = 'Link geteilt.';
+        await browser.navigator.share({ title: 'Arcane Table', url: input.value });
+        message.textContent = t('Link geteilt.');
     } catch (error) {
         if (error.name !== 'AbortError') await copyLink(input, button, message, browser);
     }
@@ -60,7 +61,7 @@ export async function restoreParticipant(identity, csrf, fetcher = globalThis.fe
         body: JSON.stringify({ token: identity.token }),
     });
     if ([404, 422].includes(response.status)) return { expired: true };
-    if (!response.ok) throw new Error('Die Teilnahme konnte gerade nicht wiederhergestellt werden.');
+    if (!response.ok) throw new Error(t('Die Teilnahme konnte gerade nicht wiederhergestellt werden.'));
     const data = await response.json();
     // Never navigate to a URL supplied by local storage or an unexpected event.
     const url = new URL(data.url, globalThis.location?.origin || 'https://spielrunde.invalid');

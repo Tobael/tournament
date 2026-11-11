@@ -27,3 +27,6 @@ _ide_helper_models.php
 /secrets/
 /backups/
 /data/
+
+/test-results/
+/playwright-report/

@@ -54,7 +54,7 @@ class TournamentTvController extends Controller
             'html' => $tournament ? view('partials.tv-board', $this->board($tournament))->render() : view('partials.tv-empty')->render(),
             'invite' => $tournament?->invite_token,
             'closed' => $tournament?->status === Status::CLOSED,
-            'title' => ($tournament?->name ?? 'Spielrunde').' · TV · Spielrunde',
+            'title' => ($tournament?->name ?? 'Arcane Table').' · TV · Arcane Table',
             'playUrl' => $tournament ? route('play', $tournament->invite_token) : route('home', ['home' => 1]),
             'music' => ['url' => $tournament?->tv_youtube_url, 'revision' => $tournament?->tv_music_revision],
             'serverTime' => now()->getTimestampMs(),

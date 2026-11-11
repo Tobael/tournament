@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { setupMatchLife } from './match-life';
 import { setupRoundRealtime } from './realtime';
 const setupLive = () => { setupMatchLife(); setupRoundRealtime(); };
@@ -35,22 +36,22 @@ async function setupDeviceReturn() {
         const { invite, token, title, name, active, participating } = event.dataset;
         if (participating === '1') {
             if (token && rememberParticipant(storage, { invite, token, title, name, active: active === '1' })) {
-                event.querySelector('[data-device-message]').textContent = 'Teilnahme auf diesem Gerät gespeichert.';
+                event.querySelector('[data-device-message]').textContent = t('Teilnahme auf diesem Gerät gespeichert.');
             }
         } else {
             const identity = readParticipants(storage).find(item => item.invite === invite);
             if (identity) {
                 const message = event.querySelector('[data-device-message]');
-                message.textContent = 'Deine gespeicherte Teilnahme wird wiederhergestellt …';
+                message.textContent = t('Deine gespeicherte Teilnahme wird wiederhergestellt …');
                 try {
                     const result = await restoreParticipant(identity, document.querySelector('meta[name="csrf-token"]').content);
                     if (!event.isConnected) return;
                     if (result.expired) {
                         forgetParticipant(storage, invite);
-                        message.textContent = 'Dein gespeicherter Rückkehr-Link ist nicht mehr gültig. Nutze einen neuen Link oder melde dich an.';
+                        message.textContent = t('Dein gespeicherter Rückkehr-Link ist nicht mehr gültig. Nutze einen neuen Link oder melde dich an.');
                     } else window.location.replace(result.path);
                 } catch {
-                    if (event.isConnected) message.textContent = 'Automatische Rückkehr gerade nicht möglich. Lade die Seite erneut oder nutze deinen Rückkehr-Link.';
+                    if (event.isConnected) message.textContent = t('Automatische Rückkehr gerade nicht möglich. Lade die Seite erneut oder nutze deinen Rückkehr-Link.');
                 }
             }
         }
@@ -63,7 +64,7 @@ async function setupDeviceReturn() {
             const link = document.createElement('a');
             link.className = 'utility-button';
             link.href = `/play/${identity.invite}`;
-            link.textContent = `${identity.title || 'Spielrunde'} · Weiter als ${identity.name || 'Mitspieler'}`;
+            link.textContent = `${identity.title || 'Arcane Table'} · ${t('Weiter als')} ${identity.name || t('Mitspieler')}`;
             list.append(link);
         }
         home.hidden = !list.children.length;

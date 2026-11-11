@@ -1,3 +1,7 @@
+import { t, locale } from "./i18n.js";
+import { scoreboardTone } from './commentary/callouts.js';
+import { setupCommentary } from './commentary/audio.js';
+import { createDamageCommentator, createScoreboardCommentator, readScoreboard } from './commentary/events.js';
 import { subscribe } from './realtime.js';
 import { createLifeTransactions } from './life-interactions.js';
 // Only canonical YouTube destinations become iframe URLs; never embed pasted HTML.
@@ -22,7 +26,7 @@ export function youtubeEmbed(value) {
 
 export function formatCountdown(deadline, now) {
     const seconds = Math.ceil((deadline - now) / 1000);
-    if (seconds <= 0) return 'Zeit abgelaufen · Extrazüge';
+    if (seconds <= 0) return t('Zeit abgelaufen · Extrazüge');
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
@@ -31,6 +35,8 @@ export function setupTournamentTv() {
     if (!screen || screen.dataset.initialized) return;
     screen.dataset.initialized = '1';
     const board = screen.querySelector('[data-tv-board]');
+    const commentary = setupCommentary(screen, { scope: 'tv' });
+    const commentator = createScoreboardCommentator({ initial: readScoreboard(board), chime: change => commentary.signal(scoreboardTone(change)), moved: risers => highlightRisers(risers), notify: callout => commentary.show(callout) });
     const connection = screen.querySelector('[data-tv-connection]');
     const music = screen.querySelector('#tv-music');
     const toggle = screen.querySelector('[data-tv-music-toggle]');
@@ -44,11 +50,15 @@ export function setupTournamentTv() {
     let refreshing = false;
     let stopped = false;
     let refreshPending = false;
+    let pendingAnnounce = false;
     let stopLife = () => {};
     let lifeInvite;
     let connected = false;
     const lifeStates = new Map();
+    const damageCommentators = new Map();
+    let lastDamageAt = -Infinity;
     const transactions = new Map();
+    const rankTimers = new Set();
     let request;
 
     function fit() {
@@ -65,15 +75,28 @@ export function setupTournamentTv() {
             timer.textContent = formatCountdown(Number(timer.dataset.tvDeadline), now);
             timer.classList.toggle('tv-expired', Number(timer.dataset.tvDeadline) <= now);
         }
-        screen.querySelector('[data-tv-clock]').textContent = new Date(now).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        screen.querySelector('[data-tv-clock]').textContent = new Date(now).toLocaleTimeString(locale() === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
     }
-    function update(html) {
+    function highlightRisers(risers) {
+        for (const riser of risers) {
+            const row = [...board.querySelectorAll('[data-tv-standing]')].find(node => node.dataset.tvStanding === String(riser.id));
+            if (!row) continue;
+            row.classList.add('tv-rank-riser'); row.dataset.rankGain = `↑ ${riser.from - riser.to}`;
+            const timer = setTimeout(() => { row.classList.remove('tv-rank-riser'); delete row.dataset.rankGain; rankTimers.delete(timer); }, 3000);
+            rankTimers.add(timer);
+        }
+    }
+    function update(html, announce = false) {
+        for (const timer of rankTimers) clearTimeout(timer);
+        rankTimers.clear();
         const previous = new Map(Array.from(board.querySelectorAll('[data-tv-key]'), node => [node.dataset.tvKey, {
             top: node.getBoundingClientRect().top, value: node.dataset.tvValue,
         }]));
         board.innerHTML = html;
+        commentator.update(readScoreboard(board), announce && connected && document.visibilityState === 'visible');
         for (const state of lifeStates.values()) applyLife(state);
         syncTransactions();
+        syncDamageCommentators();
         tick();
         fit();
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -88,9 +111,10 @@ export function setupTournamentTv() {
             }
         }
     }
-    async function refresh() {
+    async function refresh(announce = false) {
+        announce = announce === true && connected && document.visibilityState === 'visible';
         if (stopped) return;
-        if (refreshing) { refreshPending = true; return; }
+        if (refreshing) { refreshPending = true; pendingAnnounce ||= announce; return; }
         refreshing = true;
         request = new AbortController();
         const timeout = setTimeout(() => request.abort(), 15000);
@@ -101,24 +125,25 @@ export function setupTournamentTv() {
             if (typeof data.html !== 'string' || !Number.isFinite(data.serverTime) || typeof data.closed !== 'boolean') throw new Error('Invalid state');
             if (stopped) return;
             clockOffset = data.serverTime - Date.now();
-            update(data.html);
+            update(data.html, announce || pendingAnnounce);
+            pendingAnnounce = false;
             syncMusic(data.music);
             closed = data.closed;
             watchLife(data.invite);
             if (data.title) document.title = data.title;
             if (data.playUrl) screen.querySelector('[data-tv-event-link]').href = data.playUrl;
-            connection.textContent = !connected ? 'Live-Verbindung unterbrochen · verbindet erneut' : closed ? 'Endstand · Turnier beendet' : 'Live · WebSocket';
-            if (automatic) connection.textContent += ' · Automatische Turnierwahl';
+            connection.textContent = !connected ? t('Live-Verbindung unterbrochen · verbindet erneut') : closed ? t('Endstand · Turnier beendet') : 'Live · WebSocket';
+            if (automatic) connection.textContent += t(' · Automatische Turnierwahl');
             connection.classList.toggle('tv-offline', !connected);
         } catch {
             if (!stopped) {
-                connection.textContent = 'Stand konnte nicht geladen werden · Neu laden oder auf Verbindung warten';
+                connection.textContent = t('Stand konnte nicht geladen werden · Neu laden oder auf Verbindung warten');
                 connection.classList.add('tv-offline');
             }
         } finally {
             clearTimeout(timeout);
             refreshing = false;
-            if (!stopped && refreshPending) { refreshPending = false; void refresh(); }
+            if (!stopped && refreshPending) { const nextAnnounce = pendingAnnounce; refreshPending = false; pendingAnnounce = false; void refresh(nextAnnounce); }
         }
     }
     async function keepAwake() {
@@ -134,7 +159,7 @@ export function setupTournamentTv() {
     function layout() {
         screen.classList.toggle('tv-video-focus', videoMode && !music.hidden);
         videoToggle.setAttribute('aria-pressed', String(videoMode));
-        videoToggle.textContent = videoMode ? 'Turnieransicht' : 'Livestream groß';
+        videoToggle.textContent = videoMode ? t('Turnieransicht') : t('Livestream groß');
         fit();
     }
     videoToggle.addEventListener('click', () => {
@@ -155,17 +180,17 @@ export function setupTournamentTv() {
         player.replaceChildren();
         const src = state.url && youtubeEmbed(state.url);
         if (!src) {
-            message.textContent = 'Musik gestoppt. Teilnehmende können am Handy einen YouTube-Link senden.';
+            message.textContent = t('Musik gestoppt. Teilnehmende können am Handy einen YouTube-Link senden.');
             music.hidden = true;
         } else {
             const iframe = document.createElement('iframe');
             iframe.src = `${src}&autoplay=1`;
-            iframe.title = 'YouTube · Musik für den Spielabend';
+            iframe.title = t('YouTube · Musik für den Spielabend');
             iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
             iframe.allowFullscreen = true;
             iframe.referrerPolicy = 'strict-origin-when-cross-origin';
             player.replaceChildren(iframe);
-            message.textContent = 'Vom Handy gesendet. Falls kein Ton startet, einmal im Player auf Play drücken.';
+            message.textContent = t('Vom Handy gesendet. Falls kein Ton startet, einmal im Player auf Play drücken.');
             music.hidden = false;
         }
         toggle.setAttribute('aria-expanded', String(!music.hidden));
@@ -180,13 +205,15 @@ export function setupTournamentTv() {
             if (document.fullscreenElement) await document.exitFullscreen();
             else await document.documentElement.requestFullscreen();
             void keepAwake();
-        } catch { connection.textContent = 'Vollbild nicht verfügbar · Desktop-Ansicht im Browser verwenden.'; }
+        } catch { connection.textContent = t('Vollbild nicht verfügbar · Desktop-Ansicht im Browser verwenden.'); }
     });
     document.addEventListener('fullscreenchange', () => {
-        fullscreen.textContent = document.fullscreenElement ? 'Vollbild beenden' : 'Vollbild';
+        fullscreen.textContent = document.fullscreenElement ? t('Vollbild beenden') : t('Vollbild');
         fit();
     });
     document.addEventListener('visibilitychange', () => {
+        commentary.clear();
+        for (const engine of damageCommentators.values()) engine.clear();
         if (document.visibilityState === 'visible') { void refresh(); void keepAwake(); }
     });
     window.addEventListener('online', refresh);
@@ -222,12 +249,29 @@ export function setupTournamentTv() {
         }
         for (const [id, current] of transactions) if (!present.has(id)) { current.destroy(); transactions.delete(id); }
     }
+    function syncDamageCommentators() {
+        const present = new Set();
+        for (const table of board.querySelectorAll('[data-tv-life-state]')) {
+            try {
+                const initial = JSON.parse(table.dataset.tvLifeState);
+                present.add(initial.matchId);
+                if (!damageCommentators.has(initial.matchId)) {
+                    damageCommentators.set(initial.matchId, createDamageCommentator({ initial, alwaysLethal: true, notify: callout => {
+                        if (callout.tone !== 'knockout' && Date.now() - lastDamageAt < 25000) return;
+                        lastDamageAt = Date.now();
+                        commentary.show(callout, true);
+                    } }));
+                } else damageCommentators.get(initial.matchId).update(initial, false);
+            } catch { /* Missing state cannot block the rest of the board. */ }
+        }
+        for (const [id, engine] of damageCommentators) if (!present.has(id)) { engine.destroy(); damageCommentators.delete(id); }
+    }
     function applyLife(state) {
         const table = board.querySelector(`[data-tv-life-match="${state.matchId}"]`);
         if (!table || state.revision < Number(table.dataset.lifeRevision)) return;
         tracker(table).update(state.players, state.operation);
         const score = table.closest('[data-tv-key]')?.querySelector('[data-tv-game-score]');
-        if (score) score.textContent = `Spiele ${state.players.map(player => player.wins || 0).join('–')}`;
+        if (score) score.textContent = `${t('Spiele')} ${state.players.map(player => player.wins || 0).join('–')}`;
         table.dataset.lifeRevision = state.revision;
         for (const seat of state.players) {
             const row = table.querySelector(`[data-tv-life-player="${seat.id}"]`);
@@ -243,29 +287,40 @@ export function setupTournamentTv() {
         if (invite === lifeInvite) return;
         stopLife();
         lifeInvite = invite;
-        if (!invite) return;
+        lastDamageAt = -Infinity;
         lifeStates.clear();
+        for (const engine of damageCommentators.values()) engine.destroy();
+        damageCommentators.clear();
+        syncDamageCommentators();
+        if (!invite) return;
         stopLife = subscribe(`tournament.${invite}`, 'life.changed', ({ state }) => {
             const previous = lifeStates.get(state.matchId);
             if (previous && previous.revision > state.revision) return;
             lifeStates.set(state.matchId, state);
+            damageCommentators.get(state.matchId)?.update(state, connected && document.visibilityState === 'visible');
             applyLife(state);
         }, refresh);
     }
-    const stopBoard = subscribe('tv-board', 'board.changed', refresh, refresh, value => {
+    const stopBoard = subscribe('tv-board', 'board.changed', () => void refresh(true), () => void refresh(), value => {
         connected = value;
-        connection.textContent = connected ? 'Live · WebSocket' : 'Live-Verbindung unterbrochen · verbindet erneut';
+        if (!value) { commentary.clear(); for (const engine of damageCommentators.values()) engine.clear(); }
+        connection.textContent = connected ? 'Live · WebSocket' : t('Live-Verbindung unterbrochen · verbindet erneut');
         connection.classList.toggle('tv-offline', !connected);
     });
     syncTransactions();
     watchLife(screen.dataset.invite);
     window.addEventListener('pagehide', () => {
         stopped = true;
+        commentary.destroy();
         stopBoard();
         stopLife();
         clearInterval(clockTimer);
+        for (const timer of rankTimers) clearTimeout(timer);
+        rankTimers.clear();
         for (const current of transactions.values()) current.destroy();
         transactions.clear();
+        for (const engine of damageCommentators.values()) engine.destroy();
+        damageCommentators.clear();
         observer.disconnect();
         request?.abort();
         void wakeLock?.release();

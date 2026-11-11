@@ -3,6 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY resources resources
+COPY scripts scripts
+COPY lang lang
 COPY vite.config.js ./
 
 FROM php:8.4-fpm-alpine AS php-base

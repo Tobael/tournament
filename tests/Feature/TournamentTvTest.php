@@ -80,7 +80,7 @@ test('automatic TV selects the newest running event before a newer non-running e
     $this->getJson(route('tv.state'))->assertJsonPath('closed', true);
     [$next] = tvEvent();
     $next->update(['name' => 'New evening', 'status' => Status::IN_PROGRESS]);
-    $this->getJson(route('tv.state'))->assertJsonPath('closed', false)->assertJsonPath('title', 'New evening · TV · Spielrunde');
+    $this->getJson(route('tv.state'))->assertJsonPath('closed', false)->assertJsonPath('title', 'New evening · TV · Arcane Table');
     // The old invitation-specific TV URL remains pinned to that event.
     $this->get(route('play.tv', $old->invite_token))->assertSee('Older running')->assertDontSee('New evening');
 });

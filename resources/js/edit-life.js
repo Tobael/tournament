@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 export function createDoubleTap({ open, now = () => performance.now() }) {
     let pressed;
     let previous;
@@ -36,7 +37,7 @@ export function setupLifeEntry(root, { getState, send }) {
     let lastShortTap = false;
     function open(id) {
         const state = getState();
-        if (!state.editable || root.querySelector('dialog[open]')) return;
+        if (!state.editable || state.pending || root.querySelector('dialog[open]')) return;
         const player = state.players.find(player => player.id === id);
         if (!player) return;
         playerId = id; revision = state.revision; game = state.gameNumber;
@@ -84,7 +85,7 @@ export function setupLifeEntry(root, { getState, send }) {
         if (!state.editable || state.gameNumber !== game) { dialog.close(); return; }
         if (state.revision !== revision) {
             revision = state.revision;
-            error.textContent = 'Der Stand wurde geändert. Bitte Wert prüfen und erneut bestätigen.';
+            error.textContent = t('Der Stand wurde geändert. Bitte Wert prüfen und erneut bestätigen.');
             return;
         }
         saving = true; submit.disabled = true;
@@ -93,7 +94,7 @@ export function setupLifeEntry(root, { getState, send }) {
         if (saved) dialog.close();
         else {
             revision = getState().revision;
-            error.textContent = 'Wert nicht bestätigt. Aktuellen Stand prüfen und erneut versuchen.';
+            error.textContent = t('Wert nicht bestätigt. Aktuellen Stand prüfen und erneut versuchen.');
         }
         submit.disabled = false;
     }

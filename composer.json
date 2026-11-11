@@ -74,6 +74,12 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "dev:phone": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear",
+            "npm run build",
+            "npx concurrently -c \"#93c5fd,#c6fb65\" \"php artisan serve --host=0.0.0.0 --port=8000\" \"php artisan reverb:start --host=0.0.0.0 --port=8080\" --names=web,reverb --kill-others"
         ]
     },
     "extra": {

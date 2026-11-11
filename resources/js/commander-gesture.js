@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 export function createDamageDrag({ schedule = setTimeout, cancel = clearTimeout, hitTest, start, move, end, clear }) {
     let drag;
     function stop() {
@@ -93,7 +94,7 @@ export function setupCommanderGesture(root, { getState, send }) {
             const seat = root.querySelector(`[data-life-seat="${source}"]`);
             seat.classList.add('damage-source');
             const name = getState().players.find(player => player.id === source)?.name || '';
-            ghost.textContent = `${name}: Empfänger wählen`;
+            ghost.textContent = t(':name: Empfänger wählen', {name});
             ghost.hidden = false;
             overlay.toggleAttribute('hidden', false);
             line.setAttribute('x1', x); line.setAttribute('y1', y);
@@ -167,7 +168,7 @@ export function setupCommanderGesture(root, { getState, send }) {
         if (success) dialog.close();
         else {
             change = 0;
-            dialog.querySelector('[data-damage-dialog-error]').textContent = 'Nicht bestätigt. Zählerstand prüfen.';
+            dialog.querySelector('[data-damage-dialog-error]').textContent = t('Nicht bestätigt. Zählerstand prüfen.');
         }
         delete submit.dataset.pending;
         current();

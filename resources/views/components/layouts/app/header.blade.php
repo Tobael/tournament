@@ -17,7 +17,7 @@
                 </flux:navbar.item>
             </flux:navbar>
 
-            <flux:spacer />
+            <x-language-switch /><flux:spacer />
 
             <flux:navbar class="me-1.5 space-x-0.5 rtl:space-x-reverse py-0!">
                 <flux:tooltip :content="__('Search')" position="bottom">
@@ -38,7 +38,7 @@
                         icon="book-open-text"
                         href="https://laravel.com/docs/starter-kits#livewire"
                         target="_blank"
-                        label="Documentation"
+                        label="{{ __('Documentation') }}"
                     />
                 </flux:tooltip>
             </flux:navbar>

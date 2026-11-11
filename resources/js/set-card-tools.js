@@ -1,9 +1,10 @@
+import { t, locale } from "./i18n.js";
 const initialized = new WeakSet();
 const catalogs = new Map();
-const euros = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+const euros = new Intl.NumberFormat(locale() === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: t('EUR') });
 
 export function formatPrice(value) {
-    return typeof value === 'number' && Number.isFinite(value) ? euros.format(value) : 'Kein EUR-Preis';
+    return typeof value === 'number' && Number.isFinite(value) ? euros.format(value) : t('Kein EUR-Preis');
 }
 
 export function cardElement(card, { finish = 'normal', lookup = false } = {}, documentApi = document) {
@@ -43,7 +44,7 @@ export async function lookupCard(url, { subset, number }, fetchApi = fetch) {
     const query = new URLSearchParams({ subset, number: number.trim().replace(/^#/, '').split('/')[0].trim() });
     const response = await fetchApi(`${url}?${query}`, { headers: { Accept: 'application/json' } });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Karte gerade nicht abrufbar. Bitte erneut versuchen.');
+    if (!response.ok) throw new Error(result.message || t('Karte gerade nicht abrufbar. Bitte erneut versuchen.'));
     return result;
 }
 
@@ -59,28 +60,28 @@ export function setupSetCardTools(root = document) {
             event.preventDefault();
             const currentId = ++requestId;
             const values = new FormData(form);
-            status.textContent = 'Karte wird gesucht …';
+            status.textContent = t('Karte wird gesucht …');
             result.hidden = true;
             try {
                 const data = await lookupCard(section.dataset.lookupUrl, { subset: values.get('subset'), number: values.get('number') });
                 if (!section.isConnected || currentId !== requestId) return;
                 result.replaceChildren(cardElement(data.card, { lookup: true }));
                 result.hidden = false;
-                status.textContent = 'Gefunden · '+new Date(data.updated_at).toLocaleString('de-DE');
+                status.textContent = t('Gefunden · ')+new Date(data.updated_at).toLocaleString(locale() === 'de' ? 'de-DE' : 'en-US');
             } catch (error) {
                 if (section.isConnected && currentId === requestId) status.textContent = error.message;
             }
         });
         const url = section.dataset.topUrl;
         if (!catalogs.has(url)) catalogs.set(url, fetch(url, { headers: { Accept: 'application/json' } }).then(response => {
-            if (!response.ok) throw new Error('Kartenwerte gerade nicht erreichbar.');
+            if (!response.ok) throw new Error(t('Kartenwerte gerade nicht erreichbar.'));
             return response.json();
         }).catch(() => null));
         void catalogs.get(url).then(data => {
             if (!section.isConnected) return;
             const message = section.querySelector('[data-pull-status]');
             if (!data || data.unavailable) {
-                message.textContent = 'Top Pulls gerade nicht erreichbar. Die Kartennummernsuche kannst du trotzdem nutzen.';
+                message.textContent = t('Top Pulls gerade nicht erreichbar. Die Kartennummernsuche kannst du trotzdem nutzen.');
                 return;
             }
             const select = section.querySelector('[data-card-subset]');
@@ -91,14 +92,14 @@ export function setupSetCardTools(root = document) {
                 option.textContent = `${set.name} (${set.code.toUpperCase()})`;
                 select.append(option);
             }
-            section.querySelector('[data-pull-scope]').textContent = 'Berücksichtigt: '+data.sets.map(set => set.name).join(' · ');
-            section.querySelector('[data-price-updated]').textContent = 'Stand: '+new Date(data.updated_at).toLocaleString('de-DE');
+            section.querySelector('[data-pull-scope]').textContent = t('Berücksichtigt: ')+data.sets.map(set => set.name).join(' · ');
+            section.querySelector('[data-price-updated]').textContent = t('Stand: ')+new Date(data.updated_at).toLocaleString(locale() === 'de' ? 'de-DE' : 'en-US');
             const finish = section.querySelector('[data-pull-finish]');
             const grid = section.querySelector('[data-pull-grid]');
             const render = () => {
                 const cards = data[finish.value] || [];
                 grid.replaceChildren(...cards.map(card => cardElement(card, { finish: finish.value })));
-                message.textContent = cards.length ? '' : 'Für diese Ausführung sind noch keine EUR-Preise verfügbar.';
+                message.textContent = cards.length ? '' : t('Für diese Ausführung sind noch keine EUR-Preise verfügbar.');
             };
             finish.addEventListener('change', render);
             render();

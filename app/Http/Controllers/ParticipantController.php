@@ -19,7 +19,7 @@ class ParticipantController extends Controller
         $token = basename(rtrim(parse_url(trim($data['invite']), PHP_URL_PATH) ?: '', '/'));
         $tournament = Str::isUuid($token) ? Tournament::where('invite_token', $token)->first() : null;
         if (! $tournament) {
-            throw ValidationException::withMessages(['invite' => 'Dieser Event-Link wurde nicht gefunden. Bitte prüfe den Link deiner Runde.']);
+            throw ValidationException::withMessages(['invite' => __('Dieser Event-Link wurde nicht gefunden. Bitte prüfe den Link deiner Runde.')]);
         }
 
         return redirect()->route('play', $tournament->invite_token);
@@ -39,7 +39,7 @@ class ParticipantController extends Controller
             }
             $name = auth()->user()?->name ?? trim($data['name']);
             if ($tournament->participants()->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->exists()) {
-                throw ValidationException::withMessages(['name' => 'Dieser Name ist schon dabei. Nutze deinen Rückkehr-Link oder ergänze deinen Namen.']);
+                throw ValidationException::withMessages(['name' => __('Dieser Name ist schon dabei. Nutze deinen Rückkehr-Link oder ergänze deinen Namen.')]);
             }
             $user = auth()->user() ?? User::create([
                 'name' => $name,
@@ -85,7 +85,7 @@ class ParticipantController extends Controller
         $data = $request->validate(['token' => ['required', 'string', 'size:64']]);
         $participant = TournamentUser::where('recovery_hash', hash('sha256', $data['token']))->first();
         if (! $participant) {
-            throw ValidationException::withMessages(['token' => 'Dieser Rückkehr-Link ist ungültig. Bitte die Organisation um einen neuen Link.']);
+            throw ValidationException::withMessages(['token' => __('Dieser Rückkehr-Link ist ungültig. Bitte die Organisation um einen neuen Link.')]);
         }
         $request->session()->regenerate();
         session(['participants.'.$participant->tournament_id => ['id' => $participant->id, 'token' => $data['token']]]);

@@ -84,7 +84,7 @@ class Tournaments extends Component
 
     public function mount(): void
     {
-        $this->groupId = (Group::first() ?? Group::create(['name' => 'Spielrunde']))->id;
+        $this->groupId = (Group::first() ?? Group::create(['name' => 'Arcane Table']))->id;
     }
 
     public function sort($column): void
@@ -98,12 +98,12 @@ class Tournaments extends Component
         }
     }
 
-    #[Layout('components.layouts.app', ['title' => 'Turniere'])]
+    #[Layout('components.layouts.app')]
     public function render()
     {
         return view('livewire.tournaments', [
             'groups' => Group::all(),
-        ]);
+        ])->title(__('Turniere'));
     }
 
     public function openCreateModal(): void
@@ -156,7 +156,7 @@ class Tournaments extends Component
                 'format' => [Rule::in([$this->selectedTournament->format])],
                 'tablePreference' => [Rule::in([$this->selectedTournament->table_preference])],
                 'roundLimit' => [Rule::in([$this->selectedTournament->round_limit])],
-            ], ['in' => 'Format und Rundeneinstellungen können nach dem Start nicht geändert werden.']);
+            ], ['in' => __('Format und Rundeneinstellungen können nach dem Start nicht geändert werden.')]);
         }
         $this->selectedTournament->update([
             ...$this->setDetails(),

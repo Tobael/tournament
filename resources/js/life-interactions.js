@@ -81,6 +81,7 @@ export function setupPressHold(root, activateLife) {
     window.addEventListener('blur', stop);
     return {
         get active() { return repeater.active; },
+        stop,
         destroy() {
             stop();
             root.removeEventListener('pointerdown', down);

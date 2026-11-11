@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 export function survivingPlayer(state) {
     if (!state.editable || state.players.length < 2) return null;
     const alive = state.players.filter(player => player.life > 0 && (state.format !== 'commander' || !Object.values(player.damage || {}).some(value => value >= 21)));
@@ -42,9 +43,9 @@ export function setupMatchFinish(root, { getState, isBusy, send }) {
         if (state.bestOf === 3) {
             const next = state.players.map(player => (player.wins || 0) + (player.id === winnerId ? 1 : 0));
             description.textContent = next.some(wins => wins >= 2)
-                ? `Matchgewinn mit ${next.join('–')}. Danach zurück zum Turnier.`
-                : `Spielstand danach: ${next.join('–')}. Das nächste Spiel startet mit 20 Leben.`;
-        } else description.textContent = 'Der Sieg wird für diesen Tisch gespeichert.';
+                ? t('Matchgewinn mit :score. Danach zurück zum Turnier.', {score: next.join('–')})
+                : t('Spielstand danach: :score. Das nächste Spiel startet mit 20 Leben.', {score: next.join('–')});
+        } else description.textContent = t('Der Sieg wird für diesen Tisch gespeichert.');
         message.textContent = '';
         submit.disabled = false;
         dialog.showModal();
@@ -66,7 +67,7 @@ export function setupMatchFinish(root, { getState, isBusy, send }) {
             dialog.close(); notice.reopen(); schedule();
             return;
         }
-        message.textContent = 'Sieg nicht bestätigt. Stand prüfen und erneut versuchen.';
+        message.textContent = t('Sieg nicht bestätigt. Stand prüfen und erneut versuchen.');
         submit.disabled = false;
         schedule();
     }

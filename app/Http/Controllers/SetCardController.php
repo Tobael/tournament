@@ -19,7 +19,7 @@ class SetCardController extends Controller
         $data = $request->validate([
             'number' => ['required', 'string', 'max:16', 'regex:/^[a-zA-Z0-9★*†-]+$/u'],
             'subset' => ['nullable', 'regex:/^[a-z0-9]{2,10}$/'],
-        ], ['number.required' => 'Bitte eine Kartennummer eingeben.', 'number.regex' => 'Bitte die Kartennummer wie auf der Karte eingeben, z. B. 119 oder 119a.', 'number.max' => 'Die Kartennummer ist zu lang.']);
+        ], ['number.required' => __('Bitte eine Kartennummer eingeben.'), 'number.regex' => __('Bitte die Kartennummer wie auf der Karte eingeben, z. B. 119 oder 119a.'), 'number.max' => __('Die Kartennummer ist zu lang.')]);
         try {
             $card = $cards->lookup($code, $data['subset'] ?? $code, $data['number']);
         } catch (HttpExceptionInterface $exception) {
@@ -27,10 +27,10 @@ class SetCardController extends Controller
         } catch (Throwable $exception) {
             report($exception);
 
-            return response()->json(['message' => 'Preise gerade nicht erreichbar. Bitte erneut versuchen.'], 503);
+            return response()->json(['message' => __('Preise gerade nicht erreichbar. Bitte erneut versuchen.')], 503);
         }
         if (! $card) {
-            return response()->json(['message' => 'Diese Kartennummer wurde im gewählten Set nicht gefunden.'], 404);
+            return response()->json(['message' => __('Diese Kartennummer wurde im gewählten Set nicht gefunden.')], 404);
         }
 
         return response()->json(['card' => $card, 'updated_at' => $card['priced_at']]);

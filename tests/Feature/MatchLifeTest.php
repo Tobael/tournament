@@ -10,6 +10,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 function lifeTable(string $format = 'commander'): array
@@ -332,4 +333,32 @@ test('direct life entry validates permission and revision and preserves damage, 
         expect($match->fresh()->result)->toBeNull();
     }
     Event::assertDispatchedTimes(LifeChanged::class, 4);
+});
+
+test('commentary controls and localized text are available without restoring booster routes', function () {
+    [$event, $players, $match] = lifeTable();
+    $this->actingAs($players[0]->user);
+    $this->get(lifeUrl($event, $match))->assertOk()
+        ->assertSee('data-commentary-text', false)->assertSee('data-commentary-clips', false)
+        ->assertSee('Treffer &amp; Soundboard', false)->assertSee('Popup-Effekte')->assertDontSee('data-trash-banner', false)->assertDontSee('data-commentary-voice', false);
+    $this->get(route('play.tv', $event->invite_token))->assertOk()
+        ->assertSee('data-commentary-toggle', false)->assertSee('data-tv-scoreboard', false)
+        ->assertSee('data-tv-life-state', false)->assertSee('TV-Ton aktivieren');
+    $this->withSession(['locale' => 'en'])->get(lifeUrl($event, $match))->assertOk()
+        ->assertSee('Hits &amp; soundboard', false)->assertSee('Popup effects')->assertSee('lang="en"', false);
+    $this->get('/arcane-packs')->assertNotFound();
+});
+
+test('batched life taps are bounded and return the operation ID in HTTP and live confirmations', function () {
+    Event::fake([LifeChanged::class]);
+    [$event, $players, $match] = lifeTable();
+    $this->actingAs($players[0]->user);
+    $id = (string) Str::uuid();
+    $this->postJson(lifeUrl($event, $match), ['action' => 'life', 'player' => $players[1]->id, 'delta' => -12, 'operation_id' => $id])
+        ->assertOk()->assertJsonPath('players.1.life', 28)->assertJsonPath('revision', 1)->assertJsonPath('operationId', $id);
+    Event::assertDispatched(LifeChanged::class, fn ($event) => $event->state['operationId'] === $id);
+    foreach ([0, 100, -100] as $delta) {
+        $this->postJson(lifeUrl($event, $match), ['action' => 'life', 'player' => $players[1]->id, 'delta' => $delta])->assertUnprocessable();
+    }
+    $this->postJson(lifeUrl($event, $match), ['action' => 'life', 'player' => $players[1]->id, 'delta' => -1, 'operation_id' => 'bad'])->assertUnprocessable();
 });

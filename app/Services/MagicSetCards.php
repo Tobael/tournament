@@ -58,7 +58,7 @@ class MagicSetCards
             }
             $sets = $context['sets'];
             if ($cards->contains('set', 'spg')) {
-                $sets[] = ['code' => 'spg', 'name' => 'Special Guests'];
+                $sets[] = ['code' => 'spg', 'name' => __('Special Guests')];
             }
             $result = ['normal' => $cards->filter(fn ($card) => $card['eur'] !== null)->sortByDesc('eur')->take(8)->values()->all(),
                 'foil' => $cards->filter(fn ($card) => $card['eur_foil'] !== null)->sortByDesc('eur_foil')->take(8)->values()->all(),
@@ -134,7 +134,7 @@ class MagicSetCards
         // Keep consecutive requests below Scryfall's recommended request rate.
         usleep(110000);
 
-        return Http::acceptJson()->withUserAgent('Spielrunde/1.0 (sealed card values)')
+        return Http::acceptJson()->withUserAgent('Arcane Table/1.0 (sealed card values)')
             ->connectTimeout(2)->timeout(8)->get('https://api.scryfall.com'.$path, $query)->throw();
     }
 }
