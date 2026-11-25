@@ -38,16 +38,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    # Public browser access is owned by the central homelab Anubis proxy.
     labels:
-      - traefik.enable=true
-      - traefik.docker.network=external_network
-      - traefik.http.routers.mtg.rule=Host(`${TOURNAMENT_HOST:-mtg.betz.coffee}`)
-      - traefik.http.routers.mtg.entrypoints=websecure
-      - traefik.http.routers.mtg.tls=true
-      - traefik.http.routers.mtg.tls.certresolver=externalresolver
-      - traefik.http.routers.mtg.service=mtg
-      - traefik.http.routers.mtg.middlewares=security-headers@file
-      - traefik.http.services.mtg.loadbalancer.server.port=80
+      - traefik.enable=false
+
 networks:
   external_network:
     external: true
