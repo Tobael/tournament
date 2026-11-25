@@ -14,3 +14,9 @@ authentication. Other browser HTTP and AJAX requests use the Anubis cookie.
 Cloudflare peer verification precedes trust in `CF-Connecting-IP`. No changes
 to application data or secrets are needed. Deployment remains manual for this
 security branch; verify the central proxy before deploying backend label changes.
+
+Laravel canonicalizes its forwarded client address from the validated
+`CF-Connecting-IP` before route limiters run. This preserves per-visitor limits
+even when Anubis has flattened `X-Forwarded-For` to a Cloudflare edge address.
+Malformed multi-address values are rejected; local requests without the header
+retain their usual address handling.

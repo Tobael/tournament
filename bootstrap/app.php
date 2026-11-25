@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\BroadcastBoardChanges;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\UseCloudflareVisitorIp;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(UseCloudflareVisitorIp::class);
         $middleware->web(append: [SetLocale::class, BroadcastBoardChanges::class]);
         $middleware
             ->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO)
