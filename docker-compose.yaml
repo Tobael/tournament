@@ -46,7 +46,7 @@ services:
       - traefik.http.routers.mtg.tls=true
       - traefik.http.routers.mtg.tls.certresolver=externalresolver
       - traefik.http.routers.mtg.service=mtg
-      - traefik.http.routers.mtg.middlewares=security-headers@file
+      - traefik.http.routers.mtg.middlewares=public-api@file
       - traefik.http.services.mtg.loadbalancer.server.port=80
 networks:
   external_network:
